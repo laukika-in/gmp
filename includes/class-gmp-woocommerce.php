@@ -34,54 +34,55 @@ class GMP_WooCommerce {
 }
 
 
-    public static function cart_has_gmp() {
-        if (!WC()->cart) return false;
+public static function cart_has_gmp() {
+    if (!WC()->cart) return false;
 
-        foreach (WC()->cart->get_cart_contents() as $item) {
-            if (has_term('gmp-plan', 'product_cat', $item['product_id'])) {
-                return true;
-            }
+    foreach (WC()->cart->get_cart_contents() as $item) {
+        if (has_term('gmp-plan', 'product_cat', $item['product_id'])) {
+            return true;
         }
-        return false;
     }
+    return false;
+}
 
-    public static function add_custom_checkout_fields($checkout) {
-        if (!self::cart_has_gmp()) return;
+public static function add_custom_checkout_fields($checkout) {
+    if (!self::cart_has_gmp()) return;
 
-        echo '<div id="gmp_additional_fields"><h3>' . __('Gold Money Plan Details') . '</h3>';
+    echo '<div id="gmp_additional_fields"><h3>' . __('Gold Money Plan Details') . '</h3>';
 
-        woocommerce_form_field('gmp_pan', [
-            'type'     => 'file',
-            'required' => true,
-            'label'    => 'Upload PAN Card'
-        ], '');
+    // File upload: PAN
+    echo '<p class="form-row form-row-wide">
+        <label for="gmp_pan">Upload PAN Card <span class="required">*</span></label>
+        <input type="file" name="gmp_pan" id="gmp_pan" accept=".jpg,.jpeg,.png,.pdf" required>
+    </p>';
 
-        woocommerce_form_field('gmp_aadhar', [
-            'type'     => 'file',
-            'required' => true,
-            'label'    => 'Upload Aadhar Card'
-        ], '');
+    // File upload: Aadhar
+    echo '<p class="form-row form-row-wide">
+        <label for="gmp_aadhar">Upload Aadhar Card <span class="required">*</span></label>
+        <input type="file" name="gmp_aadhar" id="gmp_aadhar" accept=".jpg,.jpeg,.png,.pdf" required>
+    </p>';
 
-        woocommerce_form_field('gmp_nominee_name', [
-            'type'     => 'text',
-            'required' => true,
-            'label'    => 'Nominee Name'
-        ], '');
+    // Text fields
+    woocommerce_form_field('gmp_nominee_name', [
+        'type'     => 'text',
+        'required' => true,
+        'label'    => 'Nominee Name'
+    ], '');
 
-        woocommerce_form_field('gmp_nominee_phone', [
-            'type'     => 'text',
-            'required' => true,
-            'label'    => 'Nominee Phone Number'
-        ], '');
+    woocommerce_form_field('gmp_nominee_phone', [
+        'type'     => 'text',
+        'required' => true,
+        'label'    => 'Nominee Phone Number'
+    ], '');
 
-        woocommerce_form_field('gmp_nominee_aadhar', [
-            'type'     => 'file',
-            'required' => true,
-            'label'    => 'Upload Nominee Aadhar Card'
-        ], '');
+    // File upload: Nominee Aadhar
+    echo '<p class="form-row form-row-wide">
+        <label for="gmp_nominee_aadhar">Upload Nominee Aadhar <span class="required">*</span></label>
+        <input type="file" name="gmp_nominee_aadhar" id="gmp_nominee_aadhar" accept=".jpg,.jpeg,.png,.pdf" required>
+    </p>';
 
-        echo '</div>';
-    }
+    echo '</div>';
+}
 
     public static function validate_custom_checkout_fields() {
         if (!self::cart_has_gmp()) return;
