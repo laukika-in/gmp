@@ -64,8 +64,6 @@ public static function add_custom_checkout_fields($checkout) {
 
     echo '<div id="gmp_additional_fields"><h3>' . __('Gold Money Plan Details') . '</h3>';
 
-    echo '<div id="gmp_additional_fields"><h3>Gold Money Plan Details</h3>';
-
     echo '<p class="form-row form-row-wide">
         <label for="gmp_pan">Upload PAN Card <span class="required">*</span></label>
         <input type="file" id="gmp_pan_upload" accept=".jpg,.jpeg,.png,.pdf" required>
@@ -102,22 +100,16 @@ public static function add_custom_checkout_fields($checkout) {
     public static function validate_custom_checkout_fields() {
         if (!self::cart_has_gmp()) return;
 
-        
         if (empty($_POST['gmp_nominee_name'])) wc_add_notice('Please enter nominee name.', 'error');
         if (empty($_POST['gmp_nominee_phone'])) wc_add_notice('Please enter nominee phone.', 'error');
-         if (empty($_POST['gmp_pan_url'])) wc_add_notice('Please upload your PAN card.', 'error');
-if (empty($_POST['gmp_aadhar_url'])) wc_add_notice('Please upload your Aadhar card.', 'error');
-if (empty($_POST['gmp_nominee_aadhar_url'])) wc_add_notice('Please upload nominee Aadhar.', 'error');
-
-
+        if (empty($_POST['gmp_pan_url'])) wc_add_notice('Please upload your PAN card.', 'error');
+        if (empty($_POST['gmp_aadhar_url'])) wc_add_notice('Please upload your Aadhar card.', 'error');
+        if (empty($_POST['gmp_nominee_aadhar_url'])) wc_add_notice('Please upload nominee Aadhar.', 'error');
     }
 
     public static function save_order_meta($order_id) {
         if (!self::cart_has_gmp()) return;
-
         $uploads = [];
-
-        // Upload files
         foreach (['gmp_pan', 'gmp_aadhar', 'gmp_nominee_aadhar'] as $field) {
             if (!empty($_FILES[$field]['name'])) {
                 require_once(ABSPATH . 'wp-admin/includes/file.php');
@@ -127,18 +119,15 @@ if (empty($_POST['gmp_nominee_aadhar_url'])) wc_add_notice('Please upload nomine
                 }
             }
         }
-
         update_post_meta($order_id, 'gmp_pan', esc_url($_POST['gmp_pan_url']));
-update_post_meta($order_id, 'gmp_aadhar', esc_url($_POST['gmp_aadhar_url']));
-update_post_meta($order_id, 'gmp_nominee_aadhar', esc_url($_POST['gmp_nominee_aadhar_url']));
-
+        update_post_meta($order_id, 'gmp_aadhar', esc_url($_POST['gmp_aadhar_url']));
+        update_post_meta($order_id, 'gmp_nominee_aadhar', esc_url($_POST['gmp_nominee_aadhar_url']));
         update_post_meta($order_id, 'gmp_nominee_name', sanitize_text_field($_POST['gmp_nominee_name']));
         update_post_meta($order_id, 'gmp_nominee_phone', sanitize_text_field($_POST['gmp_nominee_phone'])); 
     }
 
     public static function save_user_meta($user_id) {
         if (!self::cart_has_gmp()) return;
-
         update_user_meta($user_id, 'gmp_nominee_name', sanitize_text_field($_POST['gmp_nominee_name']));
         update_user_meta($user_id, 'gmp_nominee_phone', sanitize_text_field($_POST['gmp_nominee_phone']));
         // File uploads are only saved in order meta for security reasons
@@ -150,14 +139,14 @@ update_post_meta($order_id, 'gmp_nominee_aadhar', esc_url($_POST['gmp_nominee_aa
         'gmp_nominee_aadhar' => 'Nominee Aadhar',
     ];
 
-    echo '<h3>Gold Money Plan Documents</h3><ul>';
+    echo '<p class="form-field form-field-wide" style=" margin: 12px 0px; font-weight: 600; color: #333; font-size: 105%; ">Gold Money Plan Documents</p><ul>';
     foreach ($fields as $key => $label) {
         $url = get_post_meta($order->get_id(), $key, true);
         if ($url) {
-            echo "<li><strong>{$label}:</strong> <a href='" . esc_url($url) . "' target='_blank'>Download</a></li>";
+            echo "<li><strong>{$label}:</strong> <a href='" . esc_url($url) . "' target='_blank'>View</a></li>";
         }
     }
     echo '</ul>';
-}
+    }
 
 }
