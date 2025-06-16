@@ -18,6 +18,8 @@ class GMP_WooCommerce {
         add_filter('query_vars', [__CLASS__, 'add_query_vars']);
         add_filter('woocommerce_account_menu_items', [__CLASS__, 'add_gmp_menu']);
         add_action('woocommerce_account_gmp_endpoint', [__CLASS__, 'render_gmp_page']);
+        add_action('woocommerce_add_to_cart', [__CLASS__, 'track_emi_cart_add']);
+add_action('woocommerce_checkout_order_processed', [__CLASS__, 'record_emi_payment']);
     }
 
 public static function force_enctype() {
@@ -177,5 +179,30 @@ public static function add_custom_checkout_fields($checkout) {
             include GMP_PLUGIN_PATH . 'templates/gmp-dashboard.php';
         }
     }
+public static function track_emi_cart_add($cart_item_key) {
+    if (!empty($_GET['gmp_emi_payment']) && is_numeric($_GET['gmp_emi_payment'])) {
+        WC()->cart->cart_contents[$cart_item_key]['gmp_emi_payment'] = intval($_GET['gmp_emi_payment']);
+    }
+}
 
+public static function record_emi_payment($order_id) {
+    $order = wc_get_order($order_id);
+    foreach ($order->get_items() as $item) {
+        $meta = $item->get_meta_data();
+        foreach ($meta as $m) {
+            if ($m->key === 'gmp_emi_payment') {
+                $original_order = intval($m->value);
+                $user_id = $order->get_user_id();
+                $payments = get_user_meta($user_id, "gmp_payments_{$original_order}", true) ?: [];
+
+                $payments[] = [
+                    'month' => 'EMI ' . (count($payments) + 1),
+                    'amount' => $item->get_total(),
+                    'date' => current_time('Y-m-d'),
+                ];
+                update_user_meta($user_id, "gmp_payments_{$original_order}", $payments);
+            }
+        }
+    }
+}
 }

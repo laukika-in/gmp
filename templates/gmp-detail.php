@@ -29,3 +29,12 @@ if ($payments) {
     echo "<p>No EMI payments found.</p>";
 }
 echo '<a href="' . wc_get_account_endpoint_url('gmp') . '">← Back to plans</a>';
+// Show Pay EMI Button
+$emi_amount = $item->get_total();
+$pay_link = add_query_arg([
+    'add-to-cart' => $product->get_id(),
+    'gmp_emi_payment' => $order_id
+], wc_get_cart_url());
+
+echo "<p><a class='button' href='{$pay_link}'>Pay EMI ₹" . wc_price($emi_amount) . "</a></p>";
+
