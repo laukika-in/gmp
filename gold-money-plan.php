@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Gold Money Plan
  * Description: A WooCommerce-integrated EMI saving and redemption system with interest tracking and purchase discount.
- * Version: 1.0.03
+ * Version: 1.0.04
  * Author: Your Name
  * Text Domain: gold-money-plan
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 define('GMP_PLUGIN_PATH', plugin_dir_path(__FILE__));
 define('GMP_PLUGIN_URL', plugin_dir_url(__FILE__));
-define('GMP_VERSION', '1.0.03');
+define('GMP_VERSION', '1.0.04');
 
 // Autoload core classes
 require_once GMP_PLUGIN_PATH . 'includes/class-gmp-init.php';
