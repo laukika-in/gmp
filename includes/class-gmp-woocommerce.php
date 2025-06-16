@@ -105,6 +105,8 @@ public static function add_custom_checkout_fields($checkout) {
         if (empty($_POST['gmp_nominee_name'])) wc_add_notice('Please enter nominee name.', 'error');
         if (empty($_POST['gmp_nominee_phone'])) wc_add_notice('Please enter nominee phone.', 'error');
         if (empty($_FILES['gmp_nominee_aadhar']['name'])) wc_add_notice('Please upload nominee Aadhar.', 'error');
+        error_log(print_r($_FILES, true));
+
     }
 
     public static function save_order_meta($order_id) {
