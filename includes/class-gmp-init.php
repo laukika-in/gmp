@@ -27,14 +27,3 @@ add_shortcode('gmp_dashboard', function () {
     include GMP_PLUGIN_PATH . 'templates/dashboard.php';
     return ob_get_clean();
 });
-add_action('template_redirect', function () {
-    if (is_checkout()) {
-        ob_start(function ($content) {
-            return str_replace(
-                '<form method="post" class="checkout',
-                '<form method="post" enctype="multipart/form-data" class="checkout',
-                $content
-            );
-        });
-    }
-});

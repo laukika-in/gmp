@@ -12,18 +12,21 @@ class GMP_WooCommerce {
         add_action('woocommerce_checkout_process', [__CLASS__, 'validate_custom_checkout_fields']);
         add_action('woocommerce_checkout_update_order_meta', [__CLASS__, 'save_order_meta']);
         add_action('woocommerce_checkout_update_user_meta', [__CLASS__, 'save_user_meta']);
-   add_action('woocommerce_before_checkout_form', function () {
-    ob_start(function ($content) {
-        return str_replace(
-            '<form method="post" class="checkout',
-            '<form method="post" enctype="multipart/form-data" class="checkout',
-            $content
-        );
-    });
-});
+        add_action('template_redirect', [__CLASS__, 'force_enctype']);
+
 
     }
-
+public static function force_enctype() {
+    if (is_checkout()) {
+        ob_start(function ($content) {
+            return str_replace(
+                '<form method="post" class="checkout',
+                '<form method="post" enctype="multipart/form-data" class="checkout',
+                $content
+            );
+        });
+    }
+}
     public static function register_category() {
         if (!term_exists('gmp-plan', 'product_cat')) {
             wp_insert_term('GMP Plan', 'product_cat', ['slug' => 'gmp-plan']);
