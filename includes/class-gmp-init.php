@@ -31,10 +31,16 @@ class GMP_Init {
 
     }
 
-    public static function enqueue_assets() {
-        wp_enqueue_style('gmp-style', GMP_PLUGIN_URL . 'assets/css/style.css', [], GMP_VERSION);
-        wp_enqueue_script('gmp-script', GMP_PLUGIN_URL . 'assets/js/script.js', ['jquery'], GMP_VERSION, true);
-    }
+   public static function enqueue_assets() {
+    wp_enqueue_style('gmp-style', GMP_PLUGIN_URL . 'assets/css/style.css', [], GMP_VERSION);
+    wp_enqueue_script('gmp-script', GMP_PLUGIN_URL . 'assets/js/script.js', ['jquery'], GMP_VERSION, true);
+
+    wp_localize_script('gmp-script', 'gmp_ajax', [
+        'ajax_url' => admin_url('admin-ajax.php'),
+        'nonce'    => wp_create_nonce('gmp_upload_nonce'),
+    ]);
+}
+
 }
 add_shortcode('gmp_dashboard', function () {
     ob_start();
