@@ -21,15 +21,18 @@ class GMP_WooCommerce {
     }
 
     public static function require_login_for_gmp() {
-        if (is_checkout() && WC()->cart) {
-            foreach (WC()->cart->get_cart_contents() as $item) {
-                if (has_term('gmp-plan', 'product_cat', $item['product_id']) && !is_user_logged_in()) {
-                    wp_redirect(wp_login_url(wc_get_checkout_url()));
-                    exit;
-                }
+    if (is_checkout() && WC()->cart) {
+        foreach (WC()->cart->get_cart_contents() as $item) {
+            if (has_term('gmp-plan', 'product_cat', $item['product_id']) && !is_user_logged_in()) {
+                // Redirect to My Account page instead of wp-login.php
+                $login_page = wc_get_page_permalink('myaccount');
+                wp_redirect($login_page . '?redirect_to=' . urlencode(wc_get_checkout_url()));
+                exit;
             }
         }
     }
+}
+
 
     public static function cart_has_gmp() {
         if (!WC()->cart) return false;
