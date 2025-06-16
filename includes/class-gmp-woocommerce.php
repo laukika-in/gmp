@@ -13,7 +13,12 @@ class GMP_WooCommerce {
         add_action('woocommerce_checkout_update_order_meta', [__CLASS__, 'save_order_meta']);
         add_action('woocommerce_checkout_update_user_meta', [__CLASS__, 'save_user_meta']);
         add_action('template_redirect', [__CLASS__, 'force_enctype']);
-add_action('woocommerce_admin_order_data_after_order_details', [__CLASS__, 'display_admin_order_meta']);
+        add_action('woocommerce_admin_order_data_after_order_details', [__CLASS__, 'display_admin_order_meta']);
+        add_action('init', [__CLASS__, 'add_my_account_endpoint']);
+        add_filter('query_vars', [__CLASS__, 'add_query_vars']);
+        add_filter('woocommerce_account_menu_items', [__CLASS__, 'add_gmp_menu_item']);
+        add_action('woocommerce_account_gmp_endpoint', [__CLASS__, 'render_gmp_dashboard']);
+
 
 
     }
@@ -148,5 +153,30 @@ public static function add_custom_checkout_fields($checkout) {
     }
     echo '</ul>';
     }
+    public static function add_my_account_endpoint() {
+        add_rewrite_endpoint('gmp', EP_ROOT | EP_PAGES);
+    }
 
+    public static function add_query_vars($vars) {
+        $vars[] = 'gmp';
+        return $vars;
+    }
+
+    public static function add_gmp_menu_item($items) {
+        $logout = $items['customer-logout'];
+        unset($items['customer-logout']);
+        $items['gmp'] = 'Gold Money Plan';
+        $items['customer-logout'] = $logout;
+        return $items;
+    }
+
+    public static function render_gmp_dashboard() {
+        $gmp_view = get_query_var('gmp');
+
+        if (is_numeric($gmp_view)) {
+            include GMP_PLUGIN_PATH . 'templates/detail.php';
+        } else {
+            include GMP_PLUGIN_PATH . 'templates/dashboard.php';
+        }
+    }
 }
