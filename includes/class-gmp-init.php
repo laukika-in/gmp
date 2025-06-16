@@ -15,6 +15,20 @@ class GMP_Init {
         GMP_WooCommerce::init();
         GMP_Redeem::init();
         GMP_Discount::init();
+        add_action('template_redirect', function () {
+    if (is_checkout()) {
+        ob_start(function ($content) {
+            // Ensure we only replace the first instance of the form tag
+            return preg_replace(
+                '/<form([^>]*class="[^"]*checkout[^"]*"[^>]*)>/i',
+                '<form$1 enctype="multipart/form-data">',
+                $content,
+                1
+            );
+        });
+    }
+});
+
     }
 
     public static function enqueue_assets() {
