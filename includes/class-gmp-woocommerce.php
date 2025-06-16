@@ -13,6 +13,7 @@ class GMP_WooCommerce {
         add_action('woocommerce_checkout_update_order_meta', [__CLASS__, 'save_order_meta']);
         add_action('woocommerce_checkout_update_user_meta', [__CLASS__, 'save_user_meta']);
         add_action('template_redirect', [__CLASS__, 'force_enctype']);
+add_action('woocommerce_admin_order_data_after_order_details', [__CLASS__, 'display_admin_order_meta']);
 
 
     }
@@ -142,36 +143,21 @@ update_post_meta($order_id, 'gmp_nominee_aadhar', esc_url($_POST['gmp_nominee_aa
         update_user_meta($user_id, 'gmp_nominee_phone', sanitize_text_field($_POST['gmp_nominee_phone']));
         // File uploads are only saved in order meta for security reasons
     }
-    
-}
-// Hook to display uploaded files in admin order page
-add_action('woocommerce_admin_order_data_after_order_details', 'gmp_show_uploaded_files_in_admin');
+    public static function display_admin_order_meta($order) {
+    $fields = [
+        'gmp_pan' => 'PAN Card',
+        'gmp_aadhar' => 'Aadhar Card',
+        'gmp_nominee_aadhar' => 'Nominee Aadhar',
+    ];
 
-function gmp_show_uploaded_files_in_admin($order) {
-    $order_id = $order->get_id();
-
-    $pan     = get_post_meta($order_id, 'gmp_pan', true);
-    $aadhar  = get_post_meta($order_id, 'gmp_aadhar', true);
-    $nom_aadhar = get_post_meta($order_id, 'gmp_nominee_aadhar', true);
-
-    if (!$pan && !$aadhar && !$nom_aadhar) return;
-
-    echo '<div class="order_data_column">';
-    echo '<h4>' . esc_html__('GMP Documents', 'gold-money-plan') . '</h4>';
-    echo '<ul>';
-
-    if ($pan) {
-        echo '<li><strong>PAN Card:</strong> <a href="' . esc_url($pan) . '" target="_blank">View / Download</a></li>';
+    echo '<h3>Gold Money Plan Documents</h3><ul>';
+    foreach ($fields as $key => $label) {
+        $url = get_post_meta($order->get_id(), $key, true);
+        if ($url) {
+            echo "<li><strong>{$label}:</strong> <a href='" . esc_url($url) . "' target='_blank'>Download</a></li>";
+        }
     }
-
-    if ($aadhar) {
-        echo '<li><strong>Aadhar Card:</strong> <a href="' . esc_url($aadhar) . '" target="_blank">View / Download</a></li>';
-    }
-
-    if ($nom_aadhar) {
-        echo '<li><strong>Nominee Aadhar:</strong> <a href="' . esc_url($nom_aadhar) . '" target="_blank">View / Download</a></li>';
-    }
-
     echo '</ul>';
-    echo '</div>';
+}
+
 }

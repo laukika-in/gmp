@@ -28,6 +28,13 @@ class GMP_User_Plan {
 
                 $month = count($plan['paid_months']) + 1;
                 $plan['paid_months'][] = ['month' => $month, 'amount' => $emi];
+                $payments = get_user_meta($user_id, "gmp_payments_{$plan_id}", true) ?: [];
+                $payments[] = [
+                    'month' => $current_month,
+                    'amount' => $emi_amount,
+                    'date' => current_time('Y-m-d'),
+                ];
+                update_user_meta($user_id, "gmp_payments_{$plan_id}", $payments);
 
                 update_user_meta($user_id, 'gmp_plan', $plan);
             }

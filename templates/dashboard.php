@@ -16,6 +16,22 @@ $paid_months = count($plan['paid_months']);
 $locked = $plan['locked'] ? 'Yes' : 'No';
 $redeemed = $plan['redeemed'] ? 'Yes' : 'No';
 $balance = $plan['balance'] ?? 0;
+
+if (isset($_GET['gmp_view']) && isset($_GET['plan_id'])) {
+    $plan_id = absint($_GET['plan_id']);
+    $user_id = get_current_user_id();
+    $payments = get_user_meta($user_id, "gmp_payments_{$plan_id}", true) ?: [];
+
+    echo '<h2>EMI Payment History</h2>';
+    echo '<table class="gmp-emi-table"><tr><th>Month</th><th>Amount</th><th>Date</th></tr>';
+    foreach ($payments as $entry) {
+        echo '<tr><td>' . esc_html($entry['month']) . '</td><td>' . esc_html($entry['amount']) . '</td><td>' . esc_html($entry['date']) . '</td></tr>';
+    }
+    echo '</table>';
+    echo '<a href="' . remove_query_arg(['gmp_view', 'plan_id']) . '">← Back to Plans</a>';
+    return;
+}
+
 ?>
 
 <div class="gmp-dashboard">
@@ -30,6 +46,13 @@ $balance = $plan['balance'] ?? 0;
     <?php if (!$plan['redeemed'] && $paid_months >= $plan['duration']) : ?>
         <button id="gmp-redeem-btn">Redeem Now</button>
     <?php endif; ?>
+    <?php
+echo '<td><a href="' . add_query_arg([
+    'gmp_view' => '1',
+    'plan_id' => $plan_id
+], get_permalink()) . '">View</a></td>';
+
+    ?>
 </div>
 
 <script>
