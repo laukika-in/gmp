@@ -1,0 +1,24 @@
+.gmp-dashboard {
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 8px;
+}
+
+.gmp-dashboard h2 {
+    margin-bottom: 15px;
+}
+
+.gmp-dashboard p {
+    margin: 5px 0;
+}
+
+#gmp-redeem-btn {
+    background: #2e7d32;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 4px;
+}
