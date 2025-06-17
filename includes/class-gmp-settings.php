@@ -7,8 +7,8 @@ class GMP_Settings {
 
     public static function add_settings_menu() {
         add_menu_page(
-            'GMP Interest Settings', 
-            'GMP Interest Settings', 
+            'GMP Interests', 
+            'GMP Interests', 
             'manage_options',
             'gmp-interest-settings',
             [__CLASS__, 'render_settings_page'],
@@ -60,7 +60,11 @@ class GMP_Settings {
             if ($enabled && $months > 0) {
                 for ($m = 1; $m <= $months; $m++) {
                     $val = $data['ext'][$m] ?? '';
-                    echo "<label style='display:inline-block; width:90px;'>Month {$m}:</label> 
+                    $variations = $product->get_children();
+                    $first_variation_id = $variations ? $variations[0] : 0;
+                    $unit = get_post_meta($first_variation_id, '_subscription_period', true); // day/week/month/year
+                    $unit_label = ucfirst($unit); // Capitalize it
+                    echo "<label style='display:inline-block; width:90px;'>{$unit_label} {$m}:</label> 
                           <input type='number' name='ext_interest[{$id}][{$m}]' value='" . esc_attr($val) . "' step='0.1' min='0' style='width:70px;'><br>";
                 }
             } else {
