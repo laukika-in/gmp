@@ -107,9 +107,19 @@ add_filter('wcs_view_subscription_actions', function ($actions, $subscription) {
         $ext_enabled = get_post_meta($product->get_id(), '_gmp_enable_extension', true);
         $ext_months  = intval(get_post_meta($product->get_id(), '_gmp_extension_months', true));
         $ext_used    = get_user_meta($user_id, "_gmp_extension_used_{$subscription->get_id()}", true) ?: 0;
+$completed = $subscription->get_payment_count();
 
-        $completed   = $subscription->get_payment_count();
-        $total_count = $subscription->get_total_count();
+$items = $subscription->get_items();
+$total_count = 0;
+
+foreach ($items as $item) {
+    $product = $item->get_product();
+    if ($product && $product->is_type('subscription_variation')) {
+        $billing_length = $product->get_meta('_subscription_length');
+        $total_count = intval($billing_length);
+    }
+}
+
 
         if (
             $ext_enabled === 'yes' &&
