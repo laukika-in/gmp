@@ -66,38 +66,62 @@ public static function cart_has_gmp() {
 
 public static function add_custom_checkout_fields($checkout) {
     if (!self::cart_has_gmp()) return;
+$user_id = get_current_user_id();
+$pan_url     = get_user_meta($user_id, 'gmp_pan_url', true);
+$aadhar_url  = get_user_meta($user_id, 'gmp_aadhar_url', true);
+$nom_url     = get_user_meta($user_id, 'gmp_nominee_aadhar_url', true);
+$nom_name  = get_user_meta($user_id, 'gmp_nominee_name', true);
+$nom_phone = get_user_meta($user_id, 'gmp_nominee_phone', true);
 
     echo '<div id="gmp_additional_fields"><h3>' . __('Gold Money Plan Details') . '</h3>';
 
+   // PAN Upload
+if ($pan_url) {
+    echo '<p class="form-row form-row-wide"><label>PAN Already Uploaded:</label> <a href="' . esc_url($pan_url) . '" target="_blank">View</a>';
+    echo '<input type="hidden" name="gmp_pan_url" value="' . esc_attr($pan_url) . '"></p>';
+} else {
     echo '<p class="form-row form-row-wide">
         <label for="gmp_pan">Upload PAN Card <span class="required">*</span></label>
         <input type="file" id="gmp_pan_upload" accept=".jpg,.jpeg,.png,.pdf" required>
         <input type="hidden" name="gmp_pan_url" id="gmp_pan_url">
     </p>';
+}
 
+// Aadhar Upload
+if ($aadhar_url) {
+    echo '<p class="form-row form-row-wide"><label>Aadhar Already Uploaded:</label> <a href="' . esc_url($aadhar_url) . '" target="_blank">View</a>';
+    echo '<input type="hidden" name="gmp_aadhar_url" value="' . esc_attr($aadhar_url) . '"></p>';
+} else {
     echo '<p class="form-row form-row-wide">
         <label for="gmp_aadhar">Upload Aadhar Card <span class="required">*</span></label>
         <input type="file" id="gmp_aadhar_upload" accept=".jpg,.jpeg,.png,.pdf" required>
         <input type="hidden" name="gmp_aadhar_url" id="gmp_aadhar_url">
     </p>';
+}
 
-    woocommerce_form_field('gmp_nominee_name', [
-        'type'     => 'text',
-        'required' => true,
-        'label'    => 'Nominee Name'
-    ], '');
+woocommerce_form_field('gmp_nominee_name', [
+    'type'     => 'text',
+    'required' => true,
+    'label'    => 'Nominee Name'
+], $nom_name);
 
-    woocommerce_form_field('gmp_nominee_phone', [
-        'type'     => 'text',
-        'required' => true,
-        'label'    => 'Nominee Phone Number'
-    ], '');
+woocommerce_form_field('gmp_nominee_phone', [
+    'type'     => 'text',
+    'required' => true,
+    'label'    => 'Nominee Phone Number'
+], $nom_phone);
 
+    // Nominee Aadhar
+if ($nom_url) {
+    echo '<p class="form-row form-row-wide"><label>Nominee Aadhar Already Uploaded:</label> <a href="' . esc_url($nom_url) . '" target="_blank">View</a>';
+    echo '<input type="hidden" name="gmp_nominee_aadhar_url" value="' . esc_attr($nom_url) . '"></p>';
+} else {
     echo '<p class="form-row form-row-wide">
         <label for="gmp_nominee_aadhar">Upload Nominee Aadhar <span class="required">*</span></label>
         <input type="file" id="gmp_nominee_aadhar_upload" accept=".jpg,.jpeg,.png,.pdf" required>
         <input type="hidden" name="gmp_nominee_aadhar_url" id="gmp_nominee_aadhar_url">
     </p>';
+}
 
     echo '</div>';
 }
@@ -108,8 +132,9 @@ public static function add_custom_checkout_fields($checkout) {
         if (empty($_POST['gmp_nominee_name'])) wc_add_notice('Please enter nominee name.', 'error');
         if (empty($_POST['gmp_nominee_phone'])) wc_add_notice('Please enter nominee phone.', 'error');
         if (empty($_POST['gmp_pan_url'])) wc_add_notice('Please upload your PAN card.', 'error');
-        if (empty($_POST['gmp_aadhar_url'])) wc_add_notice('Please upload your Aadhar card.', 'error');
-        if (empty($_POST['gmp_nominee_aadhar_url'])) wc_add_notice('Please upload nominee Aadhar.', 'error');
+if (empty($_POST['gmp_aadhar_url'])) wc_add_notice('Please upload your Aadhar card.', 'error');
+if (empty($_POST['gmp_nominee_aadhar_url'])) wc_add_notice('Please upload nominee Aadhar.', 'error');
+
     }
 
     public static function save_order_meta($order_id) {
@@ -135,7 +160,11 @@ public static function add_custom_checkout_fields($checkout) {
         if (!self::cart_has_gmp()) return;
         update_user_meta($user_id, 'gmp_nominee_name', sanitize_text_field($_POST['gmp_nominee_name']));
         update_user_meta($user_id, 'gmp_nominee_phone', sanitize_text_field($_POST['gmp_nominee_phone']));
-        // File uploads are only saved in order meta for security reasons
+        update_user_meta($user_id, 'gmp_pan_url', esc_url($_POST['gmp_pan_url']));
+update_user_meta($user_id, 'gmp_nominee_name', sanitize_text_field($_POST['gmp_nominee_name']));
+update_user_meta($user_id, 'gmp_nominee_phone', sanitize_text_field($_POST['gmp_nominee_phone']));
+
+
     }
     public static function display_admin_order_meta($order) {
     $fields = [
