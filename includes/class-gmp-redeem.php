@@ -29,7 +29,18 @@ class GMP_Redeem {
         $plan['redeemed'] = true;
 
         update_user_meta($user_id, 'gmp_plan', $plan);
+update_user_meta($user_id, '_gmp_locked_' . $subscription_id, true);
 
         wp_send_json_success(['balance' => $plan['balance']]);
     }
 }
+add_filter('wcs_can_user_update_subscription_to_status', function($can_update, $subscription, $new_status) {
+    $user_id = $subscription->get_user_id();
+    $subscription_id = $subscription->get_id();
+
+    if (get_user_meta($user_id, '_gmp_locked_' . $subscription_id, true)) {
+        return false;
+    }
+
+    return $can_update;
+}, 10, 3);

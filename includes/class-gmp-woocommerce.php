@@ -208,3 +208,63 @@ public static function record_emi_payment($order_id) {
     }
 }
 }
+add_action('woocommerce_product_after_variable_attributes', 'gmp_add_variation_fields', 10, 3);
+function gmp_add_variation_fields($loop, $variation_data, $variation) {
+    woocommerce_wp_text_input([
+        'id' => "gmp_lock_period[$loop]",
+        'label' => __('Lock Period (months)', 'gmp'),
+        'desc_tip' => true,
+        'description' => __('Number of months before redemption is allowed.'),
+        'value' => get_post_meta($variation->ID, '_gmp_lock_period', true),
+        'type' => 'number'
+    ]);
+    woocommerce_wp_text_input([
+        'id' => "gmp_interest[$loop]",
+        'label' => __('Base Interest %', 'gmp'),
+        'desc_tip' => true,
+        'description' => __('Base interest rate to be applied after lock period.'),
+        'value' => get_post_meta($variation->ID, '_gmp_interest', true),
+        'type' => 'number'
+    ]);
+}
+add_action('woocommerce_save_product_variation', 'gmp_save_variation_fields', 10, 2);
+function gmp_save_variation_fields($variation_id, $i) {
+    if (isset($_POST['gmp_lock_period'][$i])) {
+        update_post_meta($variation_id, '_gmp_lock_period', sanitize_text_field($_POST['gmp_lock_period'][$i]));
+    }
+    if (isset($_POST['gmp_interest'][$i])) {
+        update_post_meta($variation_id, '_gmp_interest', sanitize_text_field($_POST['gmp_interest'][$i]));
+    }
+}
+add_action('woocommerce_subscription_payment_complete', 'gmp_handle_subscription_payment', 10, 1);
+
+function gmp_handle_subscription_payment($subscription) {
+    $items = $subscription->get_items();
+    foreach ($items as $item) {
+        $product_id = $item->get_product_id();
+        $variation_id = $item->get_variation_id();
+
+        $lock_period = get_post_meta($variation_id, '_gmp_lock_period', true);
+        $base_interest = get_post_meta($variation_id, '_gmp_interest', true);
+
+        $user_id = $subscription->get_user_id();
+        $subscription_id = $subscription->get_id();
+        $paid_count = $subscription->get_completed_payment_count();
+
+        // Apply interest logic
+        if ($paid_count == $lock_period) {
+            $emi = $subscription->get_total() / $lock_period;
+            $interest = $emi * ($base_interest / 100);
+            update_user_meta($user_id, '_gmp_bonus_' . $subscription_id, $interest);
+        }
+
+        // Optional: handle 11th, 12th month bonus
+        if ($lock_period == 10) {
+            if ($paid_count == 11) {
+                update_user_meta($user_id, '_gmp_bonus_' . $subscription_id, $emi * 0.65);
+            } elseif ($paid_count == 12) {
+                update_user_meta($user_id, '_gmp_bonus_' . $subscription_id, $emi * 0.75);
+            }
+        }
+    }
+}
