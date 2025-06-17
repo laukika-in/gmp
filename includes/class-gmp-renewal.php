@@ -74,29 +74,22 @@ class GMP_Renewal {
 }
 
 // 🟢 This goes OUTSIDE the class:
-add_action('woocommerce_check_cart_items', function () {
-    if (!is_user_logged_in()) return;
+add_filter('woocommerce_add_to_cart_validation', function ($passed, $product_id, $quantity, $variation_id = 0, $variation = [], $cart_item_data = []) {
+    if (!is_user_logged_in()) return $passed;
 
     $user_id = get_current_user_id();
-    $remove_keys = [];
+    $check_id = $variation_id ?: $product_id;
 
-    foreach (WC()->cart->get_cart() as $cart_item_key => $item) {
-        if (!isset($item['data']) || !$item['data']->is_type('subscription_variation')) continue;
+    // Only target subscription variations
+    $product = wc_get_product($check_id);
+    if (!$product || !$product->is_type('subscription_variation')) return $passed;
 
-        $variation_id = $item['variation_id'] ?? $item['product_id'];
-        $existing_sub = GMP_Renewal::get_active_subscription_for_user($user_id, $variation_id);
-
-        if ($existing_sub) {
-            // Mark for removal
-            $remove_keys[] = $cart_item_key;
-
-            // Add user-friendly notice
-            wc_add_notice(__('You already have an active subscription for this EMI plan. It was removed from your cart.'), 'error');
-        }
+    // Check active subscription
+    $existing_sub = GMP_Renewal::get_active_subscription_for_user($user_id, $check_id);
+    if ($existing_sub) {
+        wc_add_notice(__('You already have an active subscription for this EMI plan. Please do not repurchase.'), 'error');
+        return false;
     }
 
-    // Remove offending products from cart
-    foreach ($remove_keys as $key) {
-        WC()->cart->remove_cart_item($key);
-    }
-});
+    return $passed;
+}, 10, 6);
