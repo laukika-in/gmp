@@ -36,7 +36,7 @@ foreach ($customer_orders as $order) {
             $emi_amount = wc_price($item->get_total());
             $start_date = $order->get_date_created() ? $order->get_date_created()->date('Y-m-d') : '-';
             $status = ucfirst($order->get_status());
-            $detail_url = wc_get_account_endpoint_url('gmp') . 'view/' . $order_id;
+           $detail_url = wc_get_account_endpoint_url('gmp') . $order_id;
 
             echo "<tr>
                 <td>#{$order_id}</td>

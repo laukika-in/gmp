@@ -18,42 +18,38 @@ class GMP_Admin_UI {
         );
     }
 
-    public static function render_main_page() {
-        $args = [
-            'post_type' => 'gmp',
-            'posts_per_page' => -1,
-            'post_status' => 'publish',
-        ];
-        $plans = get_posts($args);
+   public static function render_main_page() {
+    echo '<div class="wrap"><h1>Gold Money Plan Purchases</h1>';
+    echo '<table class="widefat fixed striped"><thead><tr>';
+    echo '<th>User</th><th>Order ID</th><th>Product</th><th>Purchase Date</th><th>EMI</th><th>Status</th><th>Action</th>';
+    echo '</tr></thead><tbody>';
 
-        echo '<div class="wrap"><h1>Gold Money Plan Purchases</h1>';
-        echo '<table class="widefat fixed striped"><thead><tr>';
-        echo '<th>User</th><th>Order ID</th><th>Product</th><th>Purchase Date</th><th>EMI</th><th>Status</th><th>Action</th>';
-        echo '</tr></thead><tbody>';
+    $users = get_users();
 
-        foreach ($plans as $plan) {
-            $user_id = get_post_meta($plan->ID, 'user_id', true);
-            $order_id = get_post_meta($plan->ID, 'order_id', true);
-            $product_id = get_post_meta($plan->ID, 'product_id', true);
-            $emi = get_post_meta($plan->ID, 'emi', true);
-            $status = get_post_meta($plan->ID, 'status', true);
-            $date = get_post_meta($plan->ID, 'start_date', true);
-            $user = get_userdata($user_id);
-            $product = get_the_title($product_id);
+    foreach ($users as $user) {
+        $plan = get_user_meta($user->ID, 'gmp_plan', true);
+        if (!$plan) continue;
 
-            echo '<tr>';
-            echo '<td>' . esc_html($user->display_name ?? 'Unknown') . '</td>';
-            echo '<td>#' . intval($order_id) . '</td>';
-            echo '<td>' . esc_html($product) . '</td>';
-            echo '<td>' . esc_html($date) . '</td>';
-            echo '<td>₹' . esc_html($emi) . '</td>';
-            echo '<td>' . ucfirst(esc_html($status)) . '</td>';
-            echo '<td><a class="button" href="' . admin_url('admin.php?page=gmp-view&plan_id=' . $plan->ID) . '">View</a></td>';
-            echo '</tr>';
-        }
+        $order_id   = $plan['order_id'] ?? '';
+        $product_id = $plan['product_id'] ?? '';
+        $emi        = $plan['emi'] ?? '';
+        $status     = $plan['locked'] ? 'Locked' : ($plan['redeemed'] ? 'Redeemed' : 'Active');
+        $start_date = $plan['start_date'] ?? '';
+        $product    = get_the_title($product_id) ?: '—';
 
-        echo '</tbody></table></div>';
+        echo '<tr>';
+        echo '<td>' . esc_html($user->display_name) . '</td>';
+        echo '<td>#' . intval($order_id) . '</td>';
+        echo '<td>' . esc_html($product) . '</td>';
+        echo '<td>' . esc_html($start_date) . '</td>';
+        echo '<td>₹' . esc_html($emi) . '</td>';
+        echo '<td>' . esc_html($status) . '</td>';
+        echo '<td><a class="button" href="' . admin_url('admin.php?page=gmp-view&user_id=' . $user->ID . '&order_id=' . $order_id) . '">View</a></td>';
+        echo '</tr>';
     }
+
+    echo '</tbody></table></div>';
+}
 
     public static function register_admin_detail_page() {
         add_submenu_page(
