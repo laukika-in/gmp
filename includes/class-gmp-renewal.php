@@ -78,29 +78,25 @@ add_action('woocommerce_check_cart_items', function () {
     if (!is_user_logged_in()) return;
 
     $user_id = get_current_user_id();
-    $cart = WC()->cart->get_cart();
+    $remove_keys = [];
 
-    foreach ($cart as $item) {
+    foreach (WC()->cart->get_cart() as $cart_item_key => $item) {
         if (!isset($item['data']) || !$item['data']->is_type('subscription_variation')) continue;
 
-        $variation_id = $item['variation_id'];
-        if (!$variation_id) continue;
-
+        $variation_id = $item['variation_id'] ?? $item['product_id'];
         $existing_sub = GMP_Renewal::get_active_subscription_for_user($user_id, $variation_id);
 
         if ($existing_sub) {
-            // Add notice
-            wc_add_notice(__('You already have an active subscription for this EMI plan. Please do not repurchase.'), 'error');
+            // Mark for removal
+            $remove_keys[] = $cart_item_key;
 
-            // Block checkout
-            add_filter('woocommerce_cart_needs_payment', '__return_false');
-
-            // Ensure we redirect back to cart
-            add_filter('woocommerce_cart_redirect_after_error', function () {
-                return wc_get_cart_url();
-            });
-
-            break; // Stop checking further
+            // Add user-friendly notice
+            wc_add_notice(__('You already have an active subscription for this EMI plan. It was removed from your cart.'), 'error');
         }
+    }
+
+    // Remove offending products from cart
+    foreach ($remove_keys as $key) {
+        WC()->cart->remove_cart_item($key);
     }
 });
