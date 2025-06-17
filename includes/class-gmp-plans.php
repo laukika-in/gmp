@@ -1,7 +1,9 @@
 <?php
 
 class GMP_Plans {
-   
+    public static function init() {
+       
+    }
 
     public static function get_available_plans() {
         return [
