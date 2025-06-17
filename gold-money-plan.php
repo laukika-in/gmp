@@ -17,11 +17,7 @@ define('GMP_VERSION', '1.0.07');
 
 // Autoload core classes
 require_once GMP_PLUGIN_PATH . 'includes/class-gmp-init.php'; 
-require_once GMP_PLUGIN_PATH . 'includes/class-gmp-user-plan.php';
-require_once GMP_PLUGIN_PATH . 'includes/class-gmp-admin-ui.php';
 require_once GMP_PLUGIN_PATH . 'includes/class-gmp-woocommerce.php';
-require_once GMP_PLUGIN_PATH . 'includes/class-gmp-redeem.php';
-require_once GMP_PLUGIN_PATH . 'includes/class-gmp-discount.php';
 require_once GMP_PLUGIN_PATH . 'includes/helper-functions.php';
 
 // Initialize

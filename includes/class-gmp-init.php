@@ -9,11 +9,7 @@ class GMP_Init {
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
 
         // Init hooks 
-        GMP_User_Plan::init();
-        GMP_Admin_UI::init();
         GMP_WooCommerce::init();
-        GMP_Redeem::init();
-        GMP_Discount::init();
         add_action('template_redirect', function () {
     if (is_checkout()) {
         ob_start(function ($content) {
@@ -41,8 +37,4 @@ class GMP_Init {
 }
 
 }
-add_shortcode('gmp_dashboard', function () {
-    ob_start();
-    include GMP_PLUGIN_PATH . 'templates/dashboard.php';
-    return ob_get_clean();
-});
+ 
