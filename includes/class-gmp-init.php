@@ -8,8 +8,7 @@ class GMP_Init {
         // Enqueue assets
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
 
-        // Init hooks
-        GMP_Plans::init();
+        // Init hooks 
         GMP_User_Plan::init();
         GMP_Admin_UI::init();
         GMP_WooCommerce::init();
