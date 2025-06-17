@@ -73,7 +73,6 @@ class GMP_Renewal {
     }
 }
 
-// 🟢 This goes OUTSIDE the class:
 add_filter('woocommerce_add_to_cart_validation', function ($passed, $product_id, $quantity, $variation_id = 0, $variation = [], $cart_item_data = []) {
     if (!is_user_logged_in()) return $passed;
 
@@ -83,12 +82,17 @@ add_filter('woocommerce_add_to_cart_validation', function ($passed, $product_id,
     $product = wc_get_product($check_id);
     if (!$product || !$product->is_type('subscription_variation')) return $passed;
 
-    // ✅ Skip check if resubscribe intent is detected
-    if (!empty($_GET['resubscribe']) || isset($cart_item_data['resubscribe'])) {
+    // ✅ Bypass if WooCommerce marks it as renewal/resubscribe
+    if (
+        !empty($_GET['resubscribe']) ||
+        !empty($_REQUEST['subscription_reactivate']) ||
+        (isset($cart_item_data['subscription_renewal']) && $cart_item_data['subscription_renewal']) ||
+        (isset($cart_item_data['subscription_resubscribe']) && $cart_item_data['subscription_resubscribe'])
+    ) {
         return $passed;
     }
 
-    // ✅ Now perform actual duplicate subscription check
+    // ✅ Check if already subscribed
     $existing_sub = GMP_Renewal::get_active_subscription_for_user($user_id, $check_id);
     if ($existing_sub) {
         wc_add_notice(__('You already have an active subscription for this EMI plan. Please do not repurchase.'), 'error');
