@@ -233,3 +233,34 @@ function gmp_save_extension_fields($post_id) {
         update_post_meta($post_id, '_gmp_extension_months', sanitize_text_field($_POST['_gmp_extension_months']));
     }
 }
+
+add_action('woocommerce_checkout_order_processed', 'gmp_record_subscription_renewal');
+
+function gmp_record_subscription_renewal($order_id) {
+    $order = wc_get_order($order_id);
+    if (!$order || !$order->get_items()) return;
+
+    $user_id = $order->get_user_id();
+    if (!$user_id) return;
+
+    foreach ($order->get_items() as $item) {
+        $product_id   = $item->get_product_id();
+        $variation_id = $item->get_variation_id();
+        $key          = $variation_id ?: $product_id;
+
+        $quantity     = $item->get_quantity(); // In case someone buys more than one
+        $unit_price   = $item->get_total() / max($quantity, 1);
+
+        // Get past renewal data
+        $meta_key     = "gmp_subscription_history_{$key}";
+        $history      = get_user_meta($user_id, $meta_key, true) ?: [];
+
+        $history[] = [
+            'date'     => current_time('Y-m-d H:i:s'),
+            'amount'   => $unit_price,
+            'order_id' => $order_id,
+        ];
+
+        update_user_meta($user_id, $meta_key, $history);
+    }
+}

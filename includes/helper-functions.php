@@ -20,3 +20,7 @@ function gmp_get_interest_data($product_id) {
     $settings = get_option('gmp_interest_settings', []);
     return $settings[$product_id] ?? ['base' => 0, 'ext' => []];
 }
+function gmp_get_total_renewals($user_id, $product_or_variation_id) {
+    $history = get_user_meta($user_id, "gmp_subscription_history_{$product_or_variation_id}", true);
+    return is_array($history) ? count($history) : 0;
+}

@@ -11,6 +11,9 @@ class GMP_Init {
         // Init hooks 
         GMP_WooCommerce::init();
         GMP_Settings::init();
+        GMP_Renewal::init();
+
+        
         add_action('template_redirect', function () {
     if (is_checkout()) {
         ob_start(function ($content) {
