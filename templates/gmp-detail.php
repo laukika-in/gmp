@@ -1,40 +1,41 @@
 <?php
-$order_id = absint(get_query_var('gmp'));
+$order_id = get_query_var('gmp');
 $order = wc_get_order($order_id);
+if (!$order) {
+    echo '<p>Invalid order.</p>';
+    return;
+}
+$user_id = get_current_user_id();
+$items = $order->get_items();
+$plan_item = null;
+foreach ($items as $item) {
+    $product = $item->get_product();
+    if (has_term('gmp-plan', 'product_cat', $product->get_id())) {
+        $plan_item = $item;
+        break;
+    }
+}
 
-if (!$order || $order->get_user_id() !== get_current_user_id()) {
-    echo '<p>Access denied or plan not found.</p>';
+if (!$plan_item) {
+    echo '<p>No GMP plan found in this order.</p>';
     return;
 }
 
-$item = current($order->get_items());
-$product = $item->get_product();
+echo '<h2>Gold Money Plan Detail</h2>';
+echo '<p><strong>Order ID:</strong> #' . $order_id . '</p>';
+echo '<p><strong>Product:</strong> ' . esc_html($plan_item->get_name()) . '</p>';
+echo '<p><strong>Purchased on:</strong> ' . $order->get_date_created()->format('Y-m-d') . '</p>';
+echo '<p><strong>Amount:</strong> ' . wc_price($plan_item->get_total()) . '</p>';
 
-echo "<h2>Gold Money Plan Detail</h2>";
-echo "<p><strong>Plan:</strong> {$product->get_name()}</p>";
-echo "<p><strong>Date:</strong> " . $order->get_date_created()->format('Y-m-d') . "</p>";
-echo "<p><strong>EMI:</strong> " . wc_price($item->get_total()) . "</p>";
-
-// EMI History
-$payments = get_user_meta(get_current_user_id(), "gmp_payments_{$order_id}", true);
-
-echo "<h3>EMI Payment History</h3>";
+// Show EMI Payments
+$payments = get_user_meta($user_id, "gmp_payments_{$order_id}", true);
+echo '<h3>EMI Payment History</h3>';
 if ($payments) {
-    echo "<table><tr><th>Month</th><th>Amount</th><th>Date</th></tr>";
-    foreach ($payments as $entry) {
-        echo "<tr><td>{$entry['month']}</td><td>" . wc_price($entry['amount']) . "</td><td>{$entry['date']}</td></tr>";
+    echo '<table class="shop_table"><thead><tr><th>Month</th><th>Amount</th><th>Date</th></tr></thead><tbody>';
+    foreach ($payments as $p) {
+        echo '<tr><td>' . esc_html($p['month']) . '</td><td>' . wc_price($p['amount']) . '</td><td>' . esc_html($p['date']) . '</td></tr>';
     }
-    echo "</table>";
+    echo '</tbody></table>';
 } else {
-    echo "<p>No EMI payments found.</p>";
+    echo '<p>No EMI payments yet.</p>';
 }
-echo '<a href="' . wc_get_account_endpoint_url('gmp') . '">← Back to plans</a>';
-// Show Pay EMI Button
-$emi_amount = $item->get_total();
-$pay_link = add_query_arg([
-    'add-to-cart' => $product->get_id(),
-    'gmp_emi_payment' => $order_id
-], wc_get_cart_url());
-
-echo "<p><a class='button' href='{$pay_link}'>Pay EMI ₹" . wc_price($emi_amount) . "</a></p>";
-

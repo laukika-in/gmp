@@ -170,15 +170,17 @@ public static function add_custom_checkout_fields($checkout) {
         return $items;
     }
 
-    public static function render_gmp_page() {
-        $order_id = get_query_var('gmp');
+   public static function render_gmp_page() {
+    $query = get_query_var('gmp');
 
-        if (is_numeric($order_id)) {
-            include GMP_PLUGIN_PATH . 'templates/gmp-detail.php';
-        } else {
-            include GMP_PLUGIN_PATH . 'templates/gmp-dashboard.php';
-        }
+    // If numeric, ensure it's an order ID belonging to current user
+    if (is_numeric($query) && wc_get_order($query)) {
+        include GMP_PLUGIN_PATH . 'templates/gmp-detail.php';
+    } else {
+        include GMP_PLUGIN_PATH . 'templates/gmp-dashboard.php';
     }
+}
+
 public static function track_emi_cart_add($cart_item_key) {
     if (!empty($_GET['gmp_emi_payment']) && is_numeric($_GET['gmp_emi_payment'])) {
         WC()->cart->cart_contents[$cart_item_key]['gmp_emi_payment'] = intval($_GET['gmp_emi_payment']);
