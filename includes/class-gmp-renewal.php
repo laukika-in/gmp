@@ -79,16 +79,20 @@ add_action('woocommerce_check_cart_items', function () {
 
     $user_id = get_current_user_id();
 
-    foreach (WC()->cart->get_cart() as $cart_item_key => $item) {
+    foreach (WC()->cart->get_cart() as $item) {
         if (isset($item['data']) && $item['data']->is_type('subscription_variation')) {
-            $variation_id = $item['variation_id'] ?? $item['product_id'];
+            $variation_id = $item['variation_id'];
+
+            if (!$variation_id) continue;
+
             $existing_sub = GMP_Renewal::get_active_subscription_for_user($user_id, $variation_id);
 
             if ($existing_sub) {
-                wc_add_notice(__('You already have an active subscription for this plan. Please do not purchase it again.'), 'error');
-                wp_safe_redirect(wc_get_cart_url());
+                wc_add_notice(__('You already have an active subscription for this EMI plan.'), 'error');
+                wp_redirect(wc_get_cart_url());
                 exit;
             }
         }
     }
 });
+
