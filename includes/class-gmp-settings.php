@@ -3,7 +3,6 @@
 class GMP_Settings {
     public static function init() {
         add_action('admin_menu', [__CLASS__, 'add_settings_menu']);
-       
     }
 
     public static function add_settings_menu() {
@@ -19,6 +18,25 @@ class GMP_Settings {
     }
 
     public static function render_settings_page() {
+        // ✅ Move Save Handler Up Here
+        if (isset($_POST['gmp_interest_submit']) && check_admin_referer('gmp_interest_save')) {
+            $result = [];
+            foreach ($_POST['products'] as $pid) {
+                $pid = intval($pid);
+                $result[$pid] = [
+                    'base' => floatval($_POST['base_interest'][$pid] ?? 0),
+                    'ext' => [],
+                ];
+                if (!empty($_POST['ext_interest'][$pid])) {
+                    foreach ($_POST['ext_interest'][$pid] as $m => $v) {
+                        $result[$pid]['ext'][intval($m)] = floatval($v);
+                    }
+                }
+            }
+            update_option('gmp_interest_settings', $result);
+            echo '<div class="updated"><p>Settings saved.</p></div>';
+        }
+
         $saved = get_option('gmp_interest_settings', []);
         $products = wc_get_products(['type' => 'variable-subscription', 'limit' => -1]);
 
@@ -42,7 +60,8 @@ class GMP_Settings {
             if ($enabled && $months > 0) {
                 for ($m = 1; $m <= $months; $m++) {
                     $val = $data['ext'][$m] ?? '';
-                    echo "<label>Month {$m}:</label> <input type='number' name='ext_interest[{$id}][{$m}]' value='" . esc_attr($val) . "' step='0.1' min='0'><br>";
+                    echo "<label style='display:inline-block; width:90px;'>Month {$m}:</label> 
+                          <input type='number' name='ext_interest[{$id}][{$m}]' value='" . esc_attr($val) . "' step='0.1' min='0' style='width:70px;'><br>";
                 }
             } else {
                 echo '—';
@@ -53,24 +72,5 @@ class GMP_Settings {
         echo '</tbody></table><br>';
         echo '<input type="submit" class="button-primary" name="gmp_interest_submit" value="Save Settings">';
         echo '</form></div>';
-
-        // Save handler
-        if (isset($_POST['gmp_interest_submit']) && check_admin_referer('gmp_interest_save')) {
-            $result = [];
-            foreach ($_POST['products'] as $pid) {
-                $pid = intval($pid);
-                $result[$pid] = [
-                    'base' => floatval($_POST['base_interest'][$pid] ?? 0),
-                    'ext' => [],
-                ];
-                if (!empty($_POST['ext_interest'][$pid])) {
-                    foreach ($_POST['ext_interest'][$pid] as $m => $v) {
-                        $result[$pid]['ext'][intval($m)] = floatval($v);
-                    }
-                }
-            }
-            update_option('gmp_interest_settings', $result);
-            echo '<div class="updated"><p>Settings saved.</p></div>';
-        }
     }
 }
