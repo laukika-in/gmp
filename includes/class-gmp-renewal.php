@@ -6,9 +6,6 @@ class GMP_Renewal {
         add_action('woocommerce_checkout_order_processed', [__CLASS__, 'record_subscription_renewal']);
     }
 
-    /**
-     * Record renewal history when an order is placed.
-     */
     public static function record_subscription_renewal($order_id) {
         $order = wc_get_order($order_id);
         if (!$order || !$order->get_items()) return;
@@ -23,7 +20,7 @@ class GMP_Renewal {
 
             if (!$product || !has_term('gmp-plan', 'product_cat', $product_id)) continue;
 
-            $key = $variation_id ?: $product_id;
+            $key      = $variation_id ?: $product_id;
             $meta_key = "gmp_subscription_history_{$key}";
 
             $quantity   = $item->get_quantity();
@@ -40,24 +37,15 @@ class GMP_Renewal {
         }
     }
 
-    /**
-     * Get total number of renewals.
-     */
     public static function get_total_renewals($user_id, $product_or_variation_id) {
         $history = get_user_meta($user_id, "gmp_subscription_history_{$product_or_variation_id}", true);
         return is_array($history) ? count($history) : 0;
     }
 
-    /**
-     * Get full renewal history.
-     */
     public static function get_renewal_history($user_id, $product_or_variation_id) {
         return get_user_meta($user_id, "gmp_subscription_history_{$product_or_variation_id}", true) ?: [];
     }
 
-    /**
-     * Get currently active subscription for a variation.
-     */
     public static function get_active_subscription_for_user($user_id, $variation_id) {
         if (!function_exists('wcs_get_users_subscriptions')) return false;
 
@@ -72,9 +60,6 @@ class GMP_Renewal {
         return false;
     }
 
-    /**
-     * Mark that an extension payment was used.
-     */
     public static function record_extension_payment($user_id, $variation_id, $subscription_id, $amount) {
         $used = get_user_meta($user_id, "_gmp_extension_used_{$subscription_id}", true) ?: 0;
         $used++;
@@ -82,17 +67,16 @@ class GMP_Renewal {
     }
 }
 
-// 🚫 Prevent duplicate subscriptions if one already active
+// Block cart if same variation is already subscribed
 add_filter('woocommerce_add_to_cart_validation', function ($passed, $product_id, $quantity, $variation_id = 0, $variation = [], $cart_item_data = []) {
     if (!is_user_logged_in()) return $passed;
 
-    $user_id = get_current_user_id();
+    $user_id  = get_current_user_id();
     $check_id = $variation_id ?: $product_id;
 
     $product = wc_get_product($check_id);
     if (!$product || !$product->is_type('subscription_variation')) return $passed;
 
-    // Allow if it's a renewal/resubscribe (triggered by WooCommerce)
     if (
         !empty($_GET['resubscribe']) ||
         !empty($_REQUEST['subscription_reactivate']) ||
@@ -102,7 +86,6 @@ add_filter('woocommerce_add_to_cart_validation', function ($passed, $product_id,
         return $passed;
     }
 
-    // Block duplicate manual purchase
     $existing_sub = GMP_Renewal::get_active_subscription_for_user($user_id, $check_id);
     if ($existing_sub) {
         wc_add_notice(__('You already have an active subscription for this EMI plan. Please do not repurchase.'), 'error');
@@ -112,7 +95,7 @@ add_filter('woocommerce_add_to_cart_validation', function ($passed, $product_id,
     return $passed;
 }, 10, 6);
 
-// ✅ Add custom button on expired subscription to pay extension EMI
+// Add "Pay Extension EMI" button in subscription view (if eligible)
 add_filter('wcs_view_subscription_actions', function ($actions, $subscription) {
     $user_id = get_current_user_id();
 
@@ -125,14 +108,14 @@ add_filter('wcs_view_subscription_actions', function ($actions, $subscription) {
         $ext_months  = intval(get_post_meta($product->get_id(), '_gmp_extension_months', true));
         $ext_used    = get_user_meta($user_id, "_gmp_extension_used_{$subscription->get_id()}", true) ?: 0;
 
-        $completed   = $subscription->get_payment_count(); // updated deprecated method
-        $billing_len = $subscription->get_billing_length();
+        $completed   = $subscription->get_payment_count();
+        $total_count = $subscription->get_total_count();
 
         if (
             $ext_enabled === 'yes' &&
             $ext_used < $ext_months &&
             $subscription->has_status(['expired', 'active']) &&
-            $completed >= $billing_len
+            $completed >= $total_count
         ) {
             $actions['gmp_extend'] = [
                 'url'  => add_query_arg([
