@@ -80,11 +80,15 @@ add_filter('woocommerce_add_to_cart_validation', function ($passed, $product_id,
     $user_id = get_current_user_id();
     $check_id = $variation_id ?: $product_id;
 
-    // Only target subscription variations
     $product = wc_get_product($check_id);
     if (!$product || !$product->is_type('subscription_variation')) return $passed;
 
-    // Check active subscription
+    // ✅ Skip check if resubscribe intent is detected
+    if (!empty($_GET['resubscribe']) || isset($cart_item_data['resubscribe'])) {
+        return $passed;
+    }
+
+    // ✅ Now perform actual duplicate subscription check
     $existing_sub = GMP_Renewal::get_active_subscription_for_user($user_id, $check_id);
     if ($existing_sub) {
         wc_add_notice(__('You already have an active subscription for this EMI plan. Please do not repurchase.'), 'error');
