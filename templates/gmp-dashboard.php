@@ -1,4 +1,4 @@
-<h2>Your Gold Money Plans</h2>
+<<h2>Your Gold Money Plans</h2>
 <table class="shop_table shop_table_responsive">
     <thead>
         <tr>
