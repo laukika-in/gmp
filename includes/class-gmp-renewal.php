@@ -78,21 +78,29 @@ add_action('woocommerce_check_cart_items', function () {
     if (!is_user_logged_in()) return;
 
     $user_id = get_current_user_id();
+    $cart = WC()->cart->get_cart();
 
-    foreach (WC()->cart->get_cart() as $item) {
-        if (isset($item['data']) && $item['data']->is_type('subscription_variation')) {
-            $variation_id = $item['variation_id'];
+    foreach ($cart as $item) {
+        if (!isset($item['data']) || !$item['data']->is_type('subscription_variation')) continue;
 
-            if (!$variation_id) continue;
+        $variation_id = $item['variation_id'];
+        if (!$variation_id) continue;
 
-            $existing_sub = GMP_Renewal::get_active_subscription_for_user($user_id, $variation_id);
+        $existing_sub = GMP_Renewal::get_active_subscription_for_user($user_id, $variation_id);
 
-            if ($existing_sub) {
-                wc_add_notice(__('You already have an active subscription for this EMI plan.'), 'error');
-                wp_redirect(wc_get_cart_url());
-                exit;
-            }
+        if ($existing_sub) {
+            // Add notice
+            wc_add_notice(__('You already have an active subscription for this EMI plan. Please do not repurchase.'), 'error');
+
+            // Block checkout
+            add_filter('woocommerce_cart_needs_payment', '__return_false');
+
+            // Ensure we redirect back to cart
+            add_filter('woocommerce_cart_redirect_after_error', function () {
+                return wc_get_cart_url();
+            });
+
+            break; // Stop checking further
         }
     }
 });
-
