@@ -1,27 +1,61 @@
 <?php
-// This hook checks if the same subscription product is being re-purchased and treats it as a renewal
-add_action('woocommerce_checkout_create_order_line_item', 'gmp_handle_subscription_renewal_logic', 10, 4);
-function gmp_handle_subscription_renewal_logic($item, $cart_item_key, $values, $order) {
-    $product = $values['data'];
-    if (!$product->is_type('subscription') && !$product->is_type('variable-subscription')) return;
 
-    $user_id = get_current_user_id();
-    $product_id = $product->get_id();
-    $variation_id = $values['variation_id'] ?? 0;
+class GMP_Renewal {
 
-    $key = 'gmp_manual_subscription_' . $product_id;
-    if ($variation_id) {
-        $key .= '_' . $variation_id;
+    public static function init() {
+        add_action('woocommerce_checkout_order_processed', [__CLASS__, 'record_subscription_renewal']);
     }
 
-    $history = get_user_meta($user_id, $key, true) ?: [];
+    /**
+     * Records each GMP plan renewal (i.e., each order placed for a GMP product)
+     * Tracks it under user meta keyed by variation ID or product ID.
+     */
+    public static function record_subscription_renewal($order_id) {
+        $order = wc_get_order($order_id);
+        if (!$order || !$order->get_items()) return;
 
-    $history[] = [
-        'order_id' => $order->get_id(),
-        'amount' => $item->get_total(),
-        'date' => current_time('mysql'),
-    ];
+        $user_id = $order->get_user_id();
+        if (!$user_id) return;
 
-    update_user_meta($user_id, $key, $history);
+        foreach ($order->get_items() as $item) {
+            $product_id   = $item->get_product_id();
+            $variation_id = $item->get_variation_id();
+            $product      = wc_get_product($variation_id ?: $product_id);
+
+            if (!$product || !has_term('gmp-plan', 'product_cat', $product_id)) {
+                continue;
+            }
+
+            $key = $variation_id ?: $product_id;
+            $meta_key = "gmp_subscription_history_{$key}";
+
+            $quantity   = $item->get_quantity();
+            $unit_price = $item->get_total() / max($quantity, 1);
+            $history    = get_user_meta($user_id, $meta_key, true) ?: [];
+
+            $history[] = [
+                'date'     => current_time('mysql'),
+                'amount'   => $unit_price,
+                'order_id' => $order_id,
+            ];
+
+            update_user_meta($user_id, $meta_key, $history);
+        }
+    }
+
+    /**
+     * Gets the total renewal count for a given user and product/variation.
+     */
+    public static function get_total_renewals($user_id, $product_or_variation_id) {
+        $history = get_user_meta($user_id, "gmp_subscription_history_{$product_or_variation_id}", true);
+        return is_array($history) ? count($history) : 0;
+    }
+
+    /**
+     * Gets full renewal history (date, amount, order_id)
+     */
+    public static function get_renewal_history($user_id, $product_or_variation_id) {
+        return get_user_meta($user_id, "gmp_subscription_history_{$product_or_variation_id}", true) ?: [];
+    }
+
 }
-?>
