@@ -57,19 +57,23 @@ class GMP_Renewal {
     public static function get_renewal_history($user_id, $product_or_variation_id) {
         return get_user_meta($user_id, "gmp_subscription_history_{$product_or_variation_id}", true) ?: [];
     }
-public static function get_active_subscription_for_user($user_id, $variation_id) {
-    if (!class_exists('WC_Subscriptions_Manager')) return false;
 
-    $subscriptions = wcs_get_users_subscriptions($user_id);
-    foreach ($subscriptions as $sub) {
-        foreach ($sub->get_items() as $item) {
-            if ($item->get_variation_id() === $variation_id && $sub->has_status(['active', 'on-hold'])) {
-                return $sub;
+    public static function get_active_subscription_for_user($user_id, $variation_id) {
+        if (!function_exists('wcs_get_users_subscriptions')) return false;
+
+        $subscriptions = wcs_get_users_subscriptions($user_id);
+        foreach ($subscriptions as $sub) {
+            foreach ($sub->get_items() as $item) {
+                if ($item->get_variation_id() === $variation_id && $sub->has_status(['active', 'on-hold'])) {
+                    return $sub;
+                }
             }
         }
+        return false;
     }
-    return false;
 }
+
+// 🟢 This goes OUTSIDE the class:
 add_action('woocommerce_check_cart_items', function () {
     if (!is_user_logged_in()) return;
 
@@ -82,13 +86,9 @@ add_action('woocommerce_check_cart_items', function () {
 
             if ($existing_sub) {
                 wc_add_notice(__('You already have an active subscription for this plan. Please do not purchase it again.'), 'error');
-                wc_clear_notices(); // to make sure error is shown clearly
-                wc_add_notice(__('Duplicate subscription blocked.'), 'error');
                 wp_safe_redirect(wc_get_cart_url());
                 exit;
             }
         }
     }
 });
-
-}
