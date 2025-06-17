@@ -7,101 +7,70 @@ class GMP_Settings {
     }
 
     public static function add_settings_menu() {
-        add_submenu_page(
-            'woocommerce',
-            'Gold Money Plan Settings',
-            'Gold Money Plan',
+        add_menu_page(
+            'GMP Interest Settings',
+            'GMP Interest Settings',
             'manage_options',
-            'gmp-settings',
-            [__CLASS__, 'render_settings_page']
+            'gmp-interest-settings',
+            [__CLASS__, 'render_settings_page'],
+            'dashicons-money-alt',
+            56
         );
     }
 
-    public static function register_settings() {
-        register_setting('gmp_settings_group', 'gmp_interest_settings');
-    }
-
     public static function render_settings_page() {
-        $data = get_option('gmp_interest_settings', []);
+        $saved = get_option('gmp_interest_settings', []);
         $products = wc_get_products(['type' => 'variable-subscription', 'limit' => -1]);
 
-        ?>
-        <div class="wrap">
-            <h1>Gold Money Plan – Interest & Extension Settings</h1>
-            <form method="post" action="options.php">
-                <?php settings_fields('gmp_settings_group'); ?>
-                <table id="gmp_interest_table" class="widefat">
-                    <thead>
-                        <tr>
-                            <th>Plan Product</th>
-                            <th>Base Interest (%)</th>
-                            <th>Enable Extension</th>
-                            <th>Months</th>
-                            <th>Extension Interest Per Month</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($data as $index => $row): ?>
-                            <tr>
-                                <td>
-                                    <select name="gmp_interest_settings[<?php echo $index; ?>][product_id]">
-                                        <?php foreach ($products as $p): ?>
-                                            <option value="<?= $p->get_id(); ?>" <?= selected($row['product_id'], $p->get_id()) ?>><?= $p->get_name(); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </td>
-                                <td><input type="number" name="gmp_interest_settings[<?php echo $index; ?>][interest]" value="<?= esc_attr($row['interest']) ?>"></td>
-                                <td><input type="checkbox" name="gmp_interest_settings[<?php echo $index; ?>][extension]" <?= isset($row['extension']) ? 'checked' : '' ?>></td>
-                                <td><input type="number" name="gmp_interest_settings[<?php echo $index; ?>][months]" value="<?= esc_attr($row['months'] ?? '') ?>"></td>
-                                <td>
-                                    <?php
-                                    if (!empty($row['months']) && !empty($row['ext_interests'])) {
-                                        for ($i = 1; $i <= $row['months']; $i++) {
-                                            echo "Month {$i}: <input type='number' name='gmp_interest_settings[{$index}][ext_interests][{$i}]' value='" . esc_attr($row['ext_interests'][$i] ?? '') . "' style='width:60px' /> ";
-                                        }
-                                    }
-                                    ?>
-                                </td>
-                                <td><button type="button" class="button remove-row">Remove</button></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-                <p><button type="button" class="button" id="add_interest_row">Add Plan</button></p>
-                <?php submit_button(); ?>
-            </form>
-        </div>
+        echo '<div class="wrap"><h1>Gold Plan Interest Settings</h1>';
+        echo '<form method="post" action="">';
+        wp_nonce_field('gmp_interest_save');
 
-        <script>
-            document.getElementById('add_interest_row').addEventListener('click', function () {
-                const tbody = document.querySelector('#gmp_interest_table tbody');
-                const index = tbody.rows.length;
-                const newRow = document.createElement('tr');
+        echo '<table class="widefat"><thead><tr><th>Product</th><th>Base Interest (%)</th><th>Extension Interests</th></tr></thead><tbody>';
 
-                newRow.innerHTML = `
-                    <td>
-                        <select name="gmp_interest_settings[${index}][product_id]">
-                            <?php foreach ($products as $p): ?>
-                                <option value="<?= $p->get_id(); ?>"><?= $p->get_name(); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </td>
-                    <td><input type="number" name="gmp_interest_settings[${index}][interest]" value=""></td>
-                    <td><input type="checkbox" name="gmp_interest_settings[${index}][extension]"></td>
-                    <td><input type="number" name="gmp_interest_settings[${index}][months]" value=""></td>
-                    <td></td>
-                    <td><button type="button" class="button remove-row">Remove</button></td>
-                `;
-                tbody.appendChild(newRow);
-            });
+        foreach ($products as $product) {
+            $id = $product->get_id();
+            $title = $product->get_name();
+            $enabled = get_post_meta($id, '_gmp_enable_extension', true) === 'yes';
+            $months = intval(get_post_meta($id, '_gmp_extension_months', true));
+            $data = $saved[$id] ?? ['base' => '', 'ext' => []];
 
-            document.addEventListener('click', function (e) {
-                if (e.target.classList.contains('remove-row')) {
-                    e.target.closest('tr').remove();
+            echo "<tr><td><strong>{$title}</strong><input type='hidden' name='products[]' value='{$id}'></td>";
+            echo "<td><input type='number' name='base_interest[{$id}]' value='" . esc_attr($data['base']) . "' step='0.1' min='0'></td>";
+
+            echo "<td>";
+            if ($enabled && $months > 0) {
+                for ($m = 1; $m <= $months; $m++) {
+                    $val = $data['ext'][$m] ?? '';
+                    echo "<label>Month {$m}:</label> <input type='number' name='ext_interest[{$id}][{$m}]' value='" . esc_attr($val) . "' step='0.1' min='0'><br>";
                 }
-            });
-        </script>
-        <?php
+            } else {
+                echo '—';
+            }
+            echo "</td></tr>";
+        }
+
+        echo '</tbody></table><br>';
+        echo '<input type="submit" class="button-primary" name="gmp_interest_submit" value="Save Settings">';
+        echo '</form></div>';
+
+        // Save handler
+        if (isset($_POST['gmp_interest_submit']) && check_admin_referer('gmp_interest_save')) {
+            $result = [];
+            foreach ($_POST['products'] as $pid) {
+                $pid = intval($pid);
+                $result[$pid] = [
+                    'base' => floatval($_POST['base_interest'][$pid] ?? 0),
+                    'ext' => [],
+                ];
+                if (!empty($_POST['ext_interest'][$pid])) {
+                    foreach ($_POST['ext_interest'][$pid] as $m => $v) {
+                        $result[$pid]['ext'][intval($m)] = floatval($v);
+                    }
+                }
+            }
+            update_option('gmp_interest_settings', $result);
+            echo '<div class="updated"><p>Settings saved.</p></div>';
+        }
     }
 }

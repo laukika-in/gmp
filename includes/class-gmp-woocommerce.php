@@ -159,7 +159,7 @@ class GMP_WooCommerce {
         update_user_meta($user_id, 'gmp_nominee_aadhar_url', esc_url($_POST['gmp_nominee_aadhar_url']));
 
     }
-    
+
     public static function display_admin_order_meta($order) {
         $fields = [
             'gmp_pan' => 'PAN Card',
@@ -177,4 +177,59 @@ class GMP_WooCommerce {
         echo '</ul>';
     }
         
+}
+add_action('woocommerce_product_options_general_product_data', 'gmp_add_extension_fields');
+add_action('woocommerce_process_product_meta', 'gmp_save_extension_fields');
+
+function gmp_add_extension_fields() {
+    global $product_object;
+
+    echo '<div class="options_group">';
+    
+    woocommerce_wp_checkbox([
+        'id' => '_gmp_enable_extension',
+        'label' => __('Enable Extension Period', 'gmp'),
+        'description' => __('Allow paying beyond subscription expiry.'),
+        'desc_tip' => true,
+    ]);
+
+    woocommerce_wp_text_input([
+        'id' => '_gmp_extension_months',
+        'label' => __('Number of Extension Months', 'gmp'),
+        'type' => 'number',
+        'custom_attributes' => [
+            'min' => '0',
+            'step' => '1'
+        ],
+        'description' => __('Number of months the user can optionally pay after subscription ends.'),
+        'desc_tip' => true,
+    ]);
+
+    echo '</div>';
+
+    // Add JS to hide/show field based on checkbox
+    ?>
+    <script>
+        jQuery(function($) {
+            function toggleField() {
+                if ($('#_gmp_enable_extension').is(':checked')) {
+                    $('#_gmp_extension_months').closest('.form-field').show();
+                } else {
+                    $('#_gmp_extension_months').closest('.form-field').hide();
+                }
+            }
+            toggleField();
+            $('#_gmp_enable_extension').on('change', toggleField);
+        });
+    </script>
+    <?php
+}
+
+function gmp_save_extension_fields($post_id) {
+    $enabled = isset($_POST['_gmp_enable_extension']) ? 'yes' : 'no';
+    update_post_meta($post_id, '_gmp_enable_extension', $enabled);
+
+    if (isset($_POST['_gmp_extension_months'])) {
+        update_post_meta($post_id, '_gmp_extension_months', sanitize_text_field($_POST['_gmp_extension_months']));
+    }
 }
