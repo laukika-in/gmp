@@ -17,7 +17,7 @@ if (empty($customer_orders)) {
 
 echo '<table class="shop_table shop_table_responsive my_account_orders">';
 echo '<thead><tr>
-    <th>Order ID</th>
+    <th>Order-ID</th>
     <th>Plan</th>
     <th>EMI Amount</th>
     <th>Start Date</th>
