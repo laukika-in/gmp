@@ -16,8 +16,7 @@ define('GMP_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('GMP_VERSION', '1.0.07');
 
 // Autoload core classes
-require_once GMP_PLUGIN_PATH . 'includes/class-gmp-init.php';
-require_once GMP_PLUGIN_PATH . 'includes/class-gmp-plans.php';
+require_once GMP_PLUGIN_PATH . 'includes/class-gmp-init.php'; 
 require_once GMP_PLUGIN_PATH . 'includes/class-gmp-user-plan.php';
 require_once GMP_PLUGIN_PATH . 'includes/class-gmp-admin-ui.php';
 require_once GMP_PLUGIN_PATH . 'includes/class-gmp-woocommerce.php';
