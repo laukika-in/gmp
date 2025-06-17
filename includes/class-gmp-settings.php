@@ -3,13 +3,13 @@
 class GMP_Settings {
     public static function init() {
         add_action('admin_menu', [__CLASS__, 'add_settings_menu']);
-        add_action('admin_init', [__CLASS__, 'register_settings']);
+       
     }
 
     public static function add_settings_menu() {
         add_menu_page(
-            'GMP Interest Settings',
-            'GMP Interest Settings',
+            'GMP Interest Settings', 
+            'GMP Interest Settings', 
             'manage_options',
             'gmp-interest-settings',
             [__CLASS__, 'render_settings_page'],
