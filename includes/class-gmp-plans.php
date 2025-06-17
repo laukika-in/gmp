@@ -2,7 +2,23 @@
 
 class GMP_Plans {
     public static function init() {
-        // Reserved for admin-defined settings in future
+        add_action('init', [__CLASS__, 'register_post_type']);
+    }
+
+    public static function register_post_type() {
+        register_post_type('gmp', [
+            'labels' => [
+                'name' => 'Gold Money Plans',
+                'singular_name' => 'Gold Money Plan',
+            ],
+            'public' => false,
+            'show_ui' => true,
+            'show_in_menu' => true,
+            'menu_icon' => 'dashicons-money-alt',
+            'supports' => ['title'],
+            'has_archive' => false,
+            'rewrite' => false,
+        ]);
     }
 
     public static function get_available_plans() {

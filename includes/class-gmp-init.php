@@ -7,20 +7,6 @@ class GMP_Init {
 
         // Enqueue assets
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
-register_post_type('gmp', [
-    'labels' => [
-        'name' => 'GMP Plans',
-        'singular_name' => 'GMP Plan'
-    ],
-    'public' => false,
-    'show_ui' => true,
-    'has_archive' => false,
-    'menu_icon' => 'dashicons-money-alt',
-    'supports' => ['title'],
-    'capability_type' => 'post',
-    'show_in_menu' => true,
-    'menu_position' => 25,
-]);
 
         // Init hooks
         GMP_Plans::init();
