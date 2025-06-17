@@ -27,7 +27,19 @@ class GMP_Admin_UI {
     $users = get_users();
 
     foreach ($users as $user) {
-        $plan = get_user_meta($user->ID, 'gmp_plan', true);
+       $plans = get_posts([
+    'post_type'      => 'gmp',
+    'posts_per_page' => -1,
+    'post_status'    => 'publish',
+    'meta_query'     => [
+        [
+            'key'     => 'user_id',
+            'value'   => $user->ID,
+            'compare' => '='
+        ]
+    ]
+]);
+
         if (!$plan) continue;
 
         $order_id   = $plan['order_id'] ?? '';
