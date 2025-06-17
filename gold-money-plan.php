@@ -19,6 +19,6 @@ define('GMP_VERSION', '1.0.07');
 require_once GMP_PLUGIN_PATH . 'includes/class-gmp-init.php'; 
 require_once GMP_PLUGIN_PATH . 'includes/class-gmp-woocommerce.php';
 require_once GMP_PLUGIN_PATH . 'includes/helper-functions.php';
-
+require_once GMP_PLUGIN_PATH . 'includes/class-gmp-settings.php';
 // Initialize
 add_action('plugins_loaded', ['GMP_Init', 'init']);

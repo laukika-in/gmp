@@ -16,17 +16,18 @@ class GMP_WooCommerce {
         add_action('woocommerce_admin_order_data_after_order_details', [__CLASS__, 'display_admin_order_meta']); 
     }
 
-public static function force_enctype() {
-    if (is_checkout()) {
-        ob_start(function ($content) {
-            return str_replace(
-                '<form method="post" class="checkout',
-                '<form method="post" enctype="multipart/form-data" class="checkout',
-                $content
-            );
-        });
+    public static function force_enctype() {
+        if (is_checkout()) {
+            ob_start(function ($content) {
+                return str_replace(
+                    '<form method="post" class="checkout',
+                    '<form method="post" enctype="multipart/form-data" class="checkout',
+                    $content
+                );
+            });
+        }
     }
-}
+
     public static function register_category() {
         if (!term_exists('gmp-plan', 'product_cat')) {
             wp_insert_term('GMP Plan', 'product_cat', ['slug' => 'gmp-plan']);
@@ -148,6 +149,7 @@ public static function force_enctype() {
         update_post_meta($order_id, 'gmp_nominee_name', sanitize_text_field($_POST['gmp_nominee_name']));
         update_post_meta($order_id, 'gmp_nominee_phone', sanitize_text_field($_POST['gmp_nominee_phone'])); 
     }
+
     public static function save_user_meta($user_id) {
         if (!self::cart_has_gmp()) return;
         update_user_meta($user_id, 'gmp_nominee_name', sanitize_text_field($_POST['gmp_nominee_name']));
@@ -157,6 +159,7 @@ public static function force_enctype() {
         update_user_meta($user_id, 'gmp_nominee_aadhar_url', esc_url($_POST['gmp_nominee_aadhar_url']));
 
     }
+    
     public static function display_admin_order_meta($order) {
         $fields = [
             'gmp_pan' => 'PAN Card',
