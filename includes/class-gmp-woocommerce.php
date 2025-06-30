@@ -17,9 +17,17 @@ class GMP_WooCommerce {
         add_action('woocommerce_admin_order_data_after_order_details', [__CLASS__, 'display_admin_order_meta']);
 
         // Interest Tables (Frontend + Admin) 
-        add_action('woocommerce_admin_order_data_after_order_details', 'gmp_admin_related_orders_interest_table');
-        add_action('woocommerce_subscription_details_table', 'gmp_frontend_related_orders_interest_table', 30);
+         add_action(
+        'woocommerce_admin_order_data_after_order_details',
+        [ __CLASS__, 'render_interest_table_admin' ]
+    );
 
+    // Frontend: show interest table on the “View Subscription” page
+    add_action(
+        'woocommerce_subscription_details_table',
+        [ __CLASS__, 'render_interest_table_frontend' ],
+        30
+    );
 
         // Interest Snapshots
         add_action('woocommerce_checkout_create_order_line_item', [__CLASS__, 'store_interest_snapshot'], 10, 4);
@@ -210,4 +218,81 @@ public static function store_interest_snapshot($item, $cart_item_key, $values, $
     $item->add_meta_data('_gmp_interest_amount', $total_interest, true);
 }
 
+    /**
+     * Fired on the admin order page.
+     * Looks up the first subscription linked to this order,
+     * then renders the same table we use in the frontend.
+     */
+    public static function render_interest_table_admin( $order ) {
+        if ( ! function_exists( 'wcs_get_subscriptions_for_order' ) ) {
+            return;
+        }
+
+        // grab the subscription tied to this order
+        $subscriptions = wcs_get_subscriptions_for_order( $order );
+        if ( empty( $subscriptions ) ) {
+            return;
+        }
+        $subscription = reset( $subscriptions );
+
+        echo '<h3>Gold Plan EMI + Interest Summary</h3>';
+        self::output_interest_table( $subscription );
+    }
+
+    /**
+     * Fired in the “View Subscription” page under My Account.
+     * $subscription is a WC_Subscription instance.
+     */
+    public static function render_interest_table_frontend( $subscription ) {
+        if ( ! $subscription instanceof WC_Subscription ) {
+            return;
+        }
+        echo '<h3>Gold Plan EMI + Interest Summary</h3>';
+        self::output_interest_table( $subscription );
+    }
+
+    /**
+     * Shared table–builder.  Loops parent‐related orders, pulls out
+     * our stored _gmp_interest_percent and _gmp_interest_amount line-item metadata,
+     * and displays them alongside the base EMI.
+     */
+    protected static function output_interest_table( $subscription ) {
+        // get only the parent/renewal orders
+        $related_orders = $subscription->get_related_orders( [ 'parent' ] );
+        if ( empty( $related_orders ) ) {
+            echo '<p>No EMI records found.</p>';
+            return;
+        }
+
+        echo '<table class="shop_table shop_table_responsive"><thead><tr>';
+        echo '<th>Order</th><th>Date</th><th>Product</th><th>Base EMI</th><th>Interest %</th><th>Total (EMI+Interest)</th>';
+        echo '</tr></thead><tbody>';
+
+        foreach ( $related_orders as $order_id ) {
+            $order = wc_get_order( $order_id );
+            if ( ! $order ) {
+                continue;
+            }
+
+            foreach ( $order->get_items() as $item ) {
+                $qty             = max( 1, $item->get_quantity() );
+                $base            = $item->get_total() / $qty;
+                $percent         = (float) $item->get_meta( '_gmp_interest_percent' );
+                $interest_amount = (float) $item->get_meta( '_gmp_interest_amount' );
+                $total           = $base + $interest_amount;
+
+                echo '<tr>';
+                echo '<td><a href="' . esc_url( get_edit_post_link( $order->get_id() ) ) . '">#' 
+                     . esc_html( $order->get_order_number() ) . '</a></td>';
+                echo '<td>' . esc_html( $order->get_date_created()->date( 'Y-m-d' ) ) . '</td>';
+                echo '<td>' . esc_html( $item->get_name() ) . '</td>';
+                echo '<td>' . wc_price( $base ) . '</td>';
+                echo '<td>' . number_format_i18n( $percent, 2 ) . '%</td>';
+                echo '<td>' . wc_price( $total ) . '</td>';
+                echo '</tr>';
+            }
+        }
+
+        echo '</tbody></table>';
+    }
 }
