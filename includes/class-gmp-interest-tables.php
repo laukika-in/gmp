@@ -15,7 +15,7 @@ function gmp_get_interest_data_for_subscription($subscription) {
             $data[] = [
                 'index'      => count($data) + 1,
                 'date'       => $order->get_date_created()->date('Y-m-d'),
-                'order_id'   => $order->get_view_order_url(),
+                'order_id'   => $order->get_order_number(),
                 'order_link' => $order->get_id(),
                 'emi'        => wc_price($emi),
                 'interest'   => wc_price($interest) . " ({$percent}%)",
