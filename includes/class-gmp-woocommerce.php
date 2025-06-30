@@ -14,6 +14,8 @@ class GMP_WooCommerce {
         add_action('woocommerce_checkout_update_user_meta', [__CLASS__, 'save_user_meta']);
         add_action('template_redirect', [__CLASS__, 'force_enctype']);
         add_action('woocommerce_admin_order_data_after_order_details', [__CLASS__, 'display_admin_order_meta']); 
+        add_action('woocommerce_admin_order_data_after_order_details', [__CLASS__, 'add_admin_emi_interest_summary']);
+
     }
 
     public static function force_enctype() {
@@ -176,7 +178,34 @@ class GMP_WooCommerce {
         }
         echo '</ul>';
     }
+        public static function add_admin_emi_interest_summary($order) {
+    if (!function_exists('wcs_order_contains_subscription') || !wcs_order_contains_subscription($order)) return;
+
+    $interest_data = get_option('gmp_interest_settings', []);
+    echo '<div class="order_data_column"><h3>GMP EMI Interest Summary</h3>';
+    echo '<table class="widefat"><thead><tr>
+        <th>Product</th><th>Base EMI</th><th>Interest (%)</th><th>EMI + Interest</th></tr></thead><tbody>';
+
+    foreach ($order->get_items() as $item) {
+        $product = $item->get_product();
+        if (!$product) continue;
         
+        $pid = $product->get_id();
+        $base_emi = $item->get_total() / max(1, $item->get_quantity());
+        $rate = $interest_data[$pid]['base'] ?? 0;
+        $with_interest = $base_emi + ($base_emi * $rate / 100);
+
+        echo "<tr>
+            <td>{$product->get_name()}</td>
+            <td>₹" . number_format($base_emi, 2) . "</td>
+            <td>{$rate}%</td>
+            <td>₹" . number_format($with_interest, 2) . "</td>
+        </tr>";
+    }
+
+    echo '</tbody></table></div>';
+}
+
 }
 add_action('woocommerce_product_options_general_product_data', 'gmp_add_extension_fields');
 add_action('woocommerce_process_product_meta', 'gmp_save_extension_fields');
