@@ -53,7 +53,7 @@ function gmp_render_interest_table($subscription, $context = 'admin') {
         echo "<td>{$row['index']}</td>";
         echo "<td>{$row['date']}</td>";
        $link = ($context === 'frontend')
-    ? get_view_order_url()
+    ? get_view_order_url(get_view_order_url())
     : esc_url(admin_url("post.php?post={$row['order_link']}&action=edit"));
 
 echo "<td><a href='{$link}'>#{$row['order_id']}</a></td>";
