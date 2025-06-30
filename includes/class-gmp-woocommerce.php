@@ -48,8 +48,7 @@ class GMP_WooCommerce {
         add_action('woocommerce_product_options_general_product_data', ['GMP_Product_Fields', 'add']);
         add_action('woocommerce_process_product_meta', ['GMP_Product_Fields', 'save']);
 
-        // Renewal Logging
-        add_action('woocommerce_checkout_order_processed', ['GMP_Renewal', 'record']);
+         
     }
 
     public static function force_enctype() {
