@@ -18,9 +18,12 @@ class GMP_Renewal {
         add_filter( 'woocommerce_add_to_cart_validation',
             [ __CLASS__, 'prevent_duplicate_subscription' ], 20, 6
         );
-           add_filter( 'wcs_view_subscription_actions', [ __CLASS__, 'add_extension_button' ], 20, 2 );
-        add_action( 'woocommerce_checkout_order_processed', [ __CLASS__, 'record_extension_payment' ], 20, 1 );
-    
+             add_filter( 'wcs_my_subscriptions_actions',    [ __CLASS__, 'add_list_extension_button' ], 20, 2 );
+        // add the “Extend” button on the single-subscription View page
+        add_filter( 'wcs_view_subscription_actions',   [ __CLASS__, 'add_detail_extension_button' ], 20, 2 );
+        // after checkout, record that this was an extension payment
+        add_action( 'woocommerce_checkout_order_processed', [ __CLASS__, 'maybe_record_extension_payment' ], 20, 1 );
+   
     }
 
     /**
@@ -112,37 +115,55 @@ public static function prevent_duplicate_subscription( $passed, $product_id, $qu
 
     return $passed;
 }
-/**
-     * Show “Pay Extension EMI” on My Account → Subscriptions if eligible.
+ /**
+     * List page: My Account → Subscriptions table
      */
-    public static function add_extension_button( $actions, $subscription ) {
-        $user_id = $subscription->get_user_id();
+    public static function add_list_extension_button( $actions, $subscription ) {
+        return self::maybe_add( $actions, $subscription );
+    }
 
-        // Only for expired or completed subscriptions
+    /**
+     * Detail page: My Account → Subscriptions → View
+     */
+    public static function add_detail_extension_button( $actions, $subscription ) {
+        return self::maybe_add( $actions, $subscription );
+    }
+
+    /**
+     * Shared logic to append our “Pay Extension EMI” if eligible.
+     */
+    protected static function maybe_add( $actions, $subscription ) {
+        // Only expired subscriptions can be extended
         if ( ! $subscription->has_status( 'expired' ) ) {
             return $actions;
         }
 
+        $user_id = $subscription->get_user_id();
         foreach ( $subscription->get_items() as $item ) {
-            $product_id   = $item->get_variation_id() ?: $item->get_product_id();
-            // Must be a GMP Plan
+            // support variations too:
+            $product_id = $item->get_variation_id() ?: $item->get_product_id();
+
+            // only for our GMP plans
             if ( ! has_term( 'gmp-plan', 'product_cat', $product_id ) ) {
                 continue;
             }
 
-            // Is extension enabled?
+            // product-level meta:
             $enabled = get_post_meta( $product_id, '_gmp_enable_extension', true ) === 'yes';
             $max     = intval( get_post_meta( $product_id, '_gmp_extension_months', true ) );
-            // How many have they used so far?
+            // how many extensions already used on this subscription?
             $used    = intval( get_user_meta( $user_id, "_gmp_extension_used_{$subscription->get_id()}", true ) );
 
             if ( $enabled && $used < $max ) {
-                // Build a “resubscribe” URL for this subscription
+                // get the built-in resubscribe URL
                 $url = wcs_get_users_resubscribe_url( $subscription );
                 if ( $url ) {
+                    // tack on our flag so we know this is an extension
+                    $url = add_query_arg( 'gmp_extension', $subscription->get_id(), $url );
+
                     $actions['gmp_extend'] = [
-                        'url'  => esc_url( $url . '&gmp_extension=1' ),
-                        'name' => __( 'Pay Extension EMI', 'gold-money-plan' )
+                        'name' => __( 'Pay Extension EMI', 'gold-money-plan' ),
+                        'url'  => esc_url( $url ),
                     ];
                 }
             }
@@ -152,21 +173,18 @@ public static function prevent_duplicate_subscription( $passed, $product_id, $qu
     }
 
     /**
-     * After they actually check out an extension payment, count it.
+     * After checkout, if we see our flag, count it.
      */
-    public static function record_extension_payment( $order_id ) {
-        // If this checkout was triggered via our “gmp_extension” param,
-        // record one extension used.
+    public static function maybe_record_extension_payment( $order_id ) {
         if ( empty( $_GET['gmp_extension'] ) ) {
             return;
         }
-
-        $order        = wc_get_order( $order_id );
-        $sub_id       = intval( $_GET['gmp_extension'] );
-        $user_id      = $order->get_user_id() ?: get_current_user_id();
-        $key          = "_gmp_extension_used_{$sub_id}";
-        $used         = intval( get_user_meta( $user_id, $key, true ) );
-        update_user_meta( $user_id, $key, $used + 1 );
+        $sub_id  = intval( $_GET['gmp_extension'] );
+        $order   = wc_get_order( $order_id );
+        $user_id = $order->get_user_id() ?: get_current_user_id();
+        $meta    = "_gmp_extension_used_{$sub_id}";
+        $used    = intval( get_user_meta( $user_id, $meta, true ) );
+        update_user_meta( $user_id, $meta, $used + 1 );
     }
 }
 
