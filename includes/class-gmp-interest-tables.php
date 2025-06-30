@@ -15,7 +15,7 @@ function gmp_get_interest_data_for_subscription($subscription) {
             $data[] = [
                 'index'      => count($data) + 1,
                 'date'       => $order->get_date_created()->date('Y-m-d'),
-                'order_id'   => $order->get_view_order_url(),
+                'order_id'   => $order->get_order_number(),
                 'order_link' => $order->get_id(),
                 'emi'        => wc_price($emi),
                 'interest'   => wc_price($interest) . " ({$percent}%)",
@@ -53,7 +53,7 @@ function gmp_render_interest_table($subscription, $context = 'admin') {
         echo "<td>{$row['index']}</td>";
         echo "<td>{$row['date']}</td>";
        $link = ($context === 'frontend')
-    ? esc_url($row['order_link'])
+    ? get_view_order_url()
     : esc_url(admin_url("post.php?post={$row['order_link']}&action=edit"));
 
 echo "<td><a href='{$link}'>#{$row['order_id']}</a></td>";
