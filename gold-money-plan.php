@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Gold Money Plan
  * Description: A WooCommerce-integrated EMI saving and redemption system with interest tracking and purchase discount.
- * Version: 1.0.19
+ * Version: 1.0.20
  * Author: Your Name
  * Text Domain: gold-money-plan
  */
