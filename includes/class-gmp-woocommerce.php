@@ -192,30 +192,37 @@ class GMP_WooCommerce {
         echo '</ul>';
     }
 
-public static function store_interest_snapshot($item, $cart_item_key, $values, $order) {
-    $product = $values['data'];
-    $variation_id = $product->get_id();
-    $product_id = $item->get_product_id();  
+/**
+ * Snapshot the interest rate and amount on each order line
+ */
+public static function store_interest_snapshot( $item, $cart_item_key, $values, $order ) {
+    // only run on GMP Plan items
+    $product_id = $item->get_product_id();
+    if ( ! has_term( 'gmp-plan', 'product_cat', $product_id ) ) {
+        return;
+    }
 
-    if (!has_term('gmp-plan', 'product_cat', $product_id)) return;
+    // grab your interest settings
+    $settings      = get_option( 'gmp_interest_settings', [] );
+    $interest_data = isset( $settings[ $product_id ] ) 
+                   ? $settings[ $product_id ] 
+                   : [ 'base' => 0, 'ext' => [] ];
 
-    $settings = get_option('gmp_interest_settings', []);
-    $interest_data = $settings[$product_id] ?? ['base' => 0, 'ext' => []];
+    // base interest percentage (e.g. 10)
+    $base_pct = floatval( $interest_data['base'] );
 
-    $user_id = get_current_user_id();
-    if (!method_exists('GMP_Renewal', 'get_total_renewals')) return;
+    // calculate per‐unit EMI
+    $qty         = max( 1, $item->get_quantity() );
+    $unit_price  = $item->get_total() / $qty;
 
-    $order_count = GMP_Renewal::get_total_renewals($user_id, $product_id);
+    // compute how much interest that is
+    $interest_amt = round( $unit_price * ( $base_pct / 100 ), 2 );
 
-    $base_interest = floatval($interest_data['base']);
-    $extra_interest = isset($interest_data['ext'][$order_count + 1]) ? floatval($interest_data['ext'][$order_count + 1]) : 0;
-
-    $unit_price = $item->get_total() / max($item->get_quantity(), 1);
-    $total_interest = round($unit_price * ($base_interest + $extra_interest) / 100, 2);
-
-    $item->add_meta_data('_gmp_interest_percent', $base_interest + $extra_interest, true);
-    $item->add_meta_data('_gmp_interest_amount', $total_interest, true);
+    // store both percent and amount on the line
+    $item->add_meta_data( '_gmp_interest_percent', $base_pct, true );
+    $item->add_meta_data( '_gmp_interest_amount',  $interest_amt, true );
 }
+
 
     /**
      * Fired on the admin order page.
