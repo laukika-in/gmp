@@ -143,35 +143,45 @@ class GMP_Renewal {
      * 4) Add an “Extension EMI” button when they’ve exhausted base EMIs
      *    but still have extension slots left.
      */
-    public static function add_extension_button( $actions, $subscription ) {
-        if ( ! is_a( $subscription, 'WC_Subscription' ) ) {
-            return $actions;
-        }
-
-        $user_id     = $subscription->get_user_id();
-        $sub_id      = $subscription->get_id();
-        $items       = $subscription->get_items();
-        $variation_id = reset( $items )->get_variation_id();
-
-        // only if extension enabled on product
-        $enabled  = get_post_meta( $variation_id, '_gmp_enable_extension', true ) === 'yes';
-        $max_ext  = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
-        $used     = intval( get_user_meta( $user_id, "_gmp_extension_used_{$sub_id}", true ) );
-        $paid     = self::get_total_renewals( $user_id, $variation_id );
-        $length   = intval( $subscription->get_meta( '_subscription_length', true ) ); // your subscription length
-
-        // show only if base EMIs are paid and they have slots remaining
-        if ( $enabled && $paid >= $length && $used < $max_ext ) {
-            $checkout = wc_get_checkout_url();
-            $url      = add_query_arg( 'gmp_extension', $sub_id, $checkout );
-            $actions['gmp_extension'] = [
-                'url'  => $url,
-                'name' => __( 'Pay Extension EMI', 'gmp' ),
-            ];
-        }
-
+ 
+public static function add_extension_button( $actions, $subscription ) {
+    // only for Subscription objects
+    if ( ! is_a( $subscription, 'WC_Subscription' ) ) {
         return $actions;
     }
+
+    $user_id       = $subscription->get_user_id();
+    $sub_id        = $subscription->get_id();
+    $items         = $subscription->get_items();
+    $variation_id  = reset( $items )->get_variation_id();
+    $enabled       = get_post_meta( $variation_id, '_gmp_enable_extension', true ) === 'yes';
+    $max_ext       = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
+    $used          = intval( get_user_meta( $user_id, "_gmp_extension_used_{$sub_id}", true ) );
+    $paid          = self::get_total_renewals( $user_id, $variation_id );
+    // how many base periods they agreed to?
+    $base_length   = intval( $subscription->get_meta( '_subscription_length', true ) );
+
+    // Only for subscriptions that have expired, but still under extension allowance
+    if (
+        $enabled
+        && 'expired' === $subscription->get_status()
+        && $paid >= $base_length
+        && $used < $max_ext
+    ) {
+        // get the core resubscribe URL
+        $resub_url = wcs_get_users_resubscribe_url( $subscription );
+        // tell our record_extension_payment() that this is an extension
+        $resub_url = add_query_arg( 'gmp_extension', $sub_id, $resub_url );
+
+        $actions['resubscribe'] = [
+            'url'  => $resub_url,
+            'name' => __( 'Renew Now', 'gold-money-plan' ),
+        ];
+    }
+
+    return $actions;
+}
+
 }
 
 // finally hook it up
