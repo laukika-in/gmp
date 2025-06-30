@@ -16,9 +16,10 @@ class GMP_WooCommerce {
         // Admin Meta Display
         add_action('woocommerce_admin_order_data_after_order_details', [__CLASS__, 'display_admin_order_meta']);
 
-        // Interest Tables (Frontend + Admin)
-        add_action('woocommerce_admin_order_data_after_order_details', ['GMP_Interest_Table', 'render_admin']);
-        add_actionadd_action('woocommerce_subscription_details_table', ['GMP_Interest_Tables', 'frontend'], 30);
+        // Interest Tables (Frontend + Admin) 
+        add_action('woocommerce_admin_order_data_after_order_details', 'gmp_admin_related_orders_interest_table');
+        add_action('woocommerce_subscription_details_table', 'gmp_frontend_related_orders_interest_table', 30);
+
 
         // Interest Snapshots
         add_action('woocommerce_checkout_create_order_line_item', [__CLASS__, 'store_interest_snapshot'], 10, 4);
