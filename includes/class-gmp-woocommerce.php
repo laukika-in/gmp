@@ -1,37 +1,46 @@
 <?php
 
 class GMP_WooCommerce {
+
     public static function init() {
         add_action('init', [__CLASS__, 'register_category']);
-
-        // Restrict GMP product checkout to logged-in users
         add_action('template_redirect', [__CLASS__, 'require_login_for_gmp']);
+        add_action('template_redirect', [__CLASS__, 'force_enctype']);
 
-        // Add and handle custom checkout fields
+        // Custom Checkout Fields
         add_action('woocommerce_after_order_notes', [__CLASS__, 'add_custom_checkout_fields']);
         add_action('woocommerce_checkout_process', [__CLASS__, 'validate_custom_checkout_fields']);
         add_action('woocommerce_checkout_update_order_meta', [__CLASS__, 'save_order_meta']);
         add_action('woocommerce_checkout_update_user_meta', [__CLASS__, 'save_user_meta']);
-        add_action('template_redirect', [__CLASS__, 'force_enctype']);
-        add_action('woocommerce_admin_order_data_after_order_details', [__CLASS__, 'display_admin_order_meta']); 
-        add_action('woocommerce_admin_order_data_after_order_details', 'gmp_admin_related_orders_interest_table');
-        add_action('woocommerce_subscription_details_table', 'gmp_frontend_related_orders_interest_table', 20);
+
+        // Admin Meta Display
+        add_action('woocommerce_admin_order_data_after_order_details', [__CLASS__, 'display_admin_order_meta']);
+
+        // Interest Tables (Frontend + Admin)
+        add_action('woocommerce_admin_order_data_after_order_details', ['GMP_Interest_Table', 'render_admin']);
+        add_action('woocommerce_subscription_details_table', ['GMP_Interest_Table', 'render_frontend'], 20);
+
+        // Interest Snapshots
         add_action('woocommerce_checkout_create_order_line_item', [__CLASS__, 'store_interest_snapshot'], 10, 4);
-add_filter('wcs_related_orders_table_row', [__CLASS__, 'add_interest_to_admin_related_orders'], 10, 3);
 
-add_filter('wcs_my_subscriptions_related_orders_columns', function($columns) {
-    $columns['gmp_interest'] = __('Interest (₹)', 'gmp');
-    return $columns;
-});
+        // Frontend + Admin Related Order Columns
+        add_filter('wcs_related_orders_table_row', ['GMP_Interest_Meta', 'add_admin_column'], 10, 3);
+        add_filter('wcs_my_subscriptions_related_orders_column_gmp_interest', ['GMP_Interest_Meta', 'get_column']);
+        add_filter('wcs_my_subscriptions_related_orders_columns', function ($columns) {
+            $columns['gmp_interest'] = __('Interest (₹)', 'gmp');
+            return $columns;
+        });
+        add_filter('wcs_related_orders_table_header', function ($headers) {
+            $headers['gmp_interest'] = __('Interest (₹)', 'gmp');
+            return $headers;
+        });
 
-add_filter('wcs_my_subscriptions_related_orders_column_gmp_interest', function($order) {
-    return GMP_WooCommerce::get_gmp_interest_info_from_order($order);
-});
-add_filter('wcs_related_orders_table_header', function($headers) {
-    $headers['gmp_interest'] = __('Interest (₹)', 'gmp');
-    return $headers;
-});
+        // Product Extension Fields
+        add_action('woocommerce_product_options_general_product_data', ['GMP_Product_Fields', 'add']);
+        add_action('woocommerce_process_product_meta', ['GMP_Product_Fields', 'save']);
 
+        // Renewal Logging
+        add_action('woocommerce_checkout_order_processed', ['GMP_Renewal', 'record']);
     }
 
     public static function force_enctype() {
@@ -56,9 +65,7 @@ add_filter('wcs_related_orders_table_header', function($headers) {
         if (is_checkout() && WC()->cart) {
             foreach (WC()->cart->get_cart_contents() as $item) {
                 if (has_term('gmp-plan', 'product_cat', $item['product_id']) && !is_user_logged_in()) {
-                    // Redirect to My Account page instead of wp-login.php
-                    $login_page = wc_get_page_permalink('myaccount');
-                    wp_redirect($login_page . '?redirect_to=' . urlencode(wc_get_checkout_url()));
+                    wp_redirect(wc_get_page_permalink('myaccount') . '?redirect_to=' . urlencode(wc_get_checkout_url()));
                     exit;
                 }
             }
@@ -67,7 +74,6 @@ add_filter('wcs_related_orders_table_header', function($headers) {
 
     public static function cart_has_gmp() {
         if (!WC()->cart) return false;
-
         foreach (WC()->cart->get_cart_contents() as $item) {
             if (has_term('gmp-plan', 'product_cat', $item['product_id'])) {
                 return true;
@@ -78,115 +84,98 @@ add_filter('wcs_related_orders_table_header', function($headers) {
 
     public static function add_custom_checkout_fields($checkout) {
         if (!self::cart_has_gmp()) return;
+
         $user_id = get_current_user_id();
         $pan_url     = get_user_meta($user_id, 'gmp_pan_url', true);
         $aadhar_url  = get_user_meta($user_id, 'gmp_aadhar_url', true);
         $nom_url     = get_user_meta($user_id, 'gmp_nominee_aadhar_url', true);
-        $nom_name  = get_user_meta($user_id, 'gmp_nominee_name', true);
-        $nom_phone = get_user_meta($user_id, 'gmp_nominee_phone', true);
+        $nom_name    = get_user_meta($user_id, 'gmp_nominee_name', true);
+        $nom_phone   = get_user_meta($user_id, 'gmp_nominee_phone', true);
 
         echo '<div id="gmp_additional_fields"><h3>' . __('Gold Money Plan Details') . '</h3>';
 
-        // PAN Upload
+        // PAN
         if ($pan_url) {
-            echo '<p class="form-row form-row-wide"><label>PAN Already Uploaded:</label> <a href="' . esc_url($pan_url) . '" target="_blank">View</a>';
-            echo '<input type="hidden" name="gmp_pan_url" value="' . esc_attr($pan_url) . '"></p>';
+            echo '<p><label>PAN Already Uploaded:</label> <a href="' . esc_url($pan_url) . '" target="_blank">View</a></p>';
+            echo '<input type="hidden" name="gmp_pan_url" value="' . esc_attr($pan_url) . '">';
         } else {
-            echo '<p class="form-row form-row-wide">
-                <label for="gmp_pan">Upload PAN Card <span class="required">*</span></label>
-                <input type="file" id="gmp_pan_upload" accept=".jpg,.jpeg,.png,.pdf" required>
-                <input type="hidden" name="gmp_pan_url" id="gmp_pan_url">
-            </p>';
+            echo '<p><label>Upload PAN Card <span class="required">*</span></label><input type="file" id="gmp_pan_upload" accept=".jpg,.jpeg,.png,.pdf" required><input type="hidden" name="gmp_pan_url" id="gmp_pan_url"></p>';
         }
 
-        // Aadhar Upload
+        // Aadhar
         if ($aadhar_url) {
-            echo '<p class="form-row form-row-wide"><label>Aadhar Already Uploaded:</label> <a href="' . esc_url($aadhar_url) . '" target="_blank">View</a>';
-            echo '<input type="hidden" name="gmp_aadhar_url" value="' . esc_attr($aadhar_url) . '"></p>';
+            echo '<p><label>Aadhar Already Uploaded:</label> <a href="' . esc_url($aadhar_url) . '" target="_blank">View</a></p>';
+            echo '<input type="hidden" name="gmp_aadhar_url" value="' . esc_attr($aadhar_url) . '">';
         } else {
-            echo '<p class="form-row form-row-wide">
-                <label for="gmp_aadhar">Upload Aadhar Card <span class="required">*</span></label>
-                <input type="file" id="gmp_aadhar_upload" accept=".jpg,.jpeg,.png,.pdf" required>
-                <input type="hidden" name="gmp_aadhar_url" id="gmp_aadhar_url">
-            </p>';
+            echo '<p><label>Upload Aadhar Card <span class="required">*</span></label><input type="file" id="gmp_aadhar_upload" accept=".jpg,.jpeg,.png,.pdf" required><input type="hidden" name="gmp_aadhar_url" id="gmp_aadhar_url"></p>';
         }
 
-        woocommerce_form_field('gmp_nominee_name', [
-            'type'     => 'text',
-            'required' => true,
-            'label'    => 'Nominee Name'
-        ], $nom_name);
+        woocommerce_form_field('gmp_nominee_name', ['type' => 'text', 'required' => true, 'label' => 'Nominee Name'], $nom_name);
+        woocommerce_form_field('gmp_nominee_phone', ['type' => 'text', 'required' => true, 'label' => 'Nominee Phone Number'], $nom_phone);
 
-        woocommerce_form_field('gmp_nominee_phone', [
-            'type'     => 'text',
-            'required' => true,
-            'label'    => 'Nominee Phone Number'
-        ], $nom_phone);
-
-            // Nominee Aadhar
+        // Nominee Aadhar
         if ($nom_url) {
-            echo '<p class="form-row form-row-wide"><label>Nominee Aadhar Already Uploaded:</label> <a href="' . esc_url($nom_url) . '" target="_blank">View</a>';
-            echo '<input type="hidden" name="gmp_nominee_aadhar_url" value="' . esc_attr($nom_url) . '"></p>';
+            echo '<p><label>Nominee Aadhar Already Uploaded:</label> <a href="' . esc_url($nom_url) . '" target="_blank">View</a></p>';
+            echo '<input type="hidden" name="gmp_nominee_aadhar_url" value="' . esc_attr($nom_url) . '">';
         } else {
-            echo '<p class="form-row form-row-wide">
-                <label for="gmp_nominee_aadhar">Upload Nominee Aadhar <span class="required">*</span></label>
-                <input type="file" id="gmp_nominee_aadhar_upload" accept=".jpg,.jpeg,.png,.pdf" required>
-                <input type="hidden" name="gmp_nominee_aadhar_url" id="gmp_nominee_aadhar_url">
-            </p>';
+            echo '<p><label>Upload Nominee Aadhar <span class="required">*</span></label><input type="file" id="gmp_nominee_aadhar_upload" accept=".jpg,.jpeg,.png,.pdf" required><input type="hidden" name="gmp_nominee_aadhar_url" id="gmp_nominee_aadhar_url"></p>';
         }
 
-            echo '</div>';
+        echo '</div>';
     }
 
     public static function validate_custom_checkout_fields() {
         if (!self::cart_has_gmp()) return;
+        $required_fields = [
+            'gmp_nominee_name' => 'nominee name',
+            'gmp_nominee_phone' => 'nominee phone',
+            'gmp_pan_url' => 'PAN card',
+            'gmp_aadhar_url' => 'Aadhar card',
+            'gmp_nominee_aadhar_url' => 'nominee Aadhar',
+        ];
 
-        if (empty($_POST['gmp_nominee_name'])) wc_add_notice('Please enter nominee name.', 'error');
-        if (empty($_POST['gmp_nominee_phone'])) wc_add_notice('Please enter nominee phone.', 'error');
-        if (empty($_POST['gmp_pan_url'])) wc_add_notice('Please upload your PAN card.', 'error');
-        if (empty($_POST['gmp_aadhar_url'])) wc_add_notice('Please upload your Aadhar card.', 'error');
-        if (empty($_POST['gmp_nominee_aadhar_url'])) wc_add_notice('Please upload nominee Aadhar.', 'error');
-
+        foreach ($required_fields as $field => $label) {
+            if (empty($_POST[$field])) wc_add_notice("Please upload/enter your {$label}.", 'error');
+        }
     }
 
     public static function save_order_meta($order_id) {
         if (!self::cart_has_gmp()) return;
-        $uploads = [];
-        foreach (['gmp_pan', 'gmp_aadhar', 'gmp_nominee_aadhar'] as $field) {
-            if (!empty($_FILES[$field]['name'])) {
-                require_once(ABSPATH . 'wp-admin/includes/file.php');
-                $uploaded = wp_handle_upload($_FILES[$field], ['test_form' => false]);
-                if (!isset($uploaded['error'])) {
-                    $uploads[$field] = esc_url($uploaded['url']);
-                }
+
+        $fields = [
+            'gmp_pan_url', 'gmp_aadhar_url', 'gmp_nominee_aadhar_url',
+            'gmp_nominee_name', 'gmp_nominee_phone'
+        ];
+        foreach ($fields as $field) {
+            if (isset($_POST[$field])) {
+                update_post_meta($order_id, $field, sanitize_text_field($_POST[$field]));
             }
         }
-        update_post_meta($order_id, 'gmp_pan', esc_url($_POST['gmp_pan_url']));
-        update_post_meta($order_id, 'gmp_aadhar', esc_url($_POST['gmp_aadhar_url']));
-        update_post_meta($order_id, 'gmp_nominee_aadhar', esc_url($_POST['gmp_nominee_aadhar_url']));
-        update_post_meta($order_id, 'gmp_nominee_name', sanitize_text_field($_POST['gmp_nominee_name']));
-        update_post_meta($order_id, 'gmp_nominee_phone', sanitize_text_field($_POST['gmp_nominee_phone'])); 
     }
 
     public static function save_user_meta($user_id) {
         if (!self::cart_has_gmp()) return;
-        update_user_meta($user_id, 'gmp_nominee_name', sanitize_text_field($_POST['gmp_nominee_name']));
-        update_user_meta($user_id, 'gmp_nominee_phone', sanitize_text_field($_POST['gmp_nominee_phone']));
-        update_user_meta($user_id, 'gmp_pan_url', esc_url($_POST['gmp_pan_url']));
-        update_user_meta($user_id, 'gmp_aadhar_url', esc_url($_POST['gmp_aadhar_url']));
-        update_user_meta($user_id, 'gmp_nominee_aadhar_url', esc_url($_POST['gmp_nominee_aadhar_url']));
 
+        $fields = [
+            'gmp_pan_url', 'gmp_aadhar_url', 'gmp_nominee_aadhar_url',
+            'gmp_nominee_name', 'gmp_nominee_phone'
+        ];
+        foreach ($fields as $field) {
+            if (isset($_POST[$field])) {
+                update_user_meta($user_id, $field, sanitize_text_field($_POST[$field]));
+            }
+        }
     }
 
     public static function display_admin_order_meta($order) {
-        $fields = [
+        $labels = [
             'gmp_pan' => 'PAN Card',
             'gmp_aadhar' => 'Aadhar Card',
             'gmp_nominee_aadhar' => 'Nominee Aadhar',
         ];
 
-        echo '<p class="form-field form-field-wide" style=" margin: 12px 0px; font-weight: 600; color: #333; font-size: 105%; ">Gold Money Plan Documents</p><ul>';
-        foreach ($fields as $key => $label) {
+        echo '<p><strong>Gold Money Plan Documents</strong></p><ul>';
+        foreach ($labels as $key => $label) {
             $url = get_post_meta($order->get_id(), $key, true);
             if ($url) {
                 echo "<li><strong>{$label}:</strong> <a href='" . esc_url($url) . "' target='_blank'>View</a></li>";
@@ -194,181 +183,27 @@ add_filter('wcs_related_orders_table_header', function($headers) {
         }
         echo '</ul>';
     }
-        public static function render_interest_table_admin($order) {
-    if (!$order || !$order->get_meta('_subscription_renewal')) return;
 
-    echo '<h3>Gold Plan EMI + Interest Summary</h3>';
-    self::output_interest_table($order);
-}
+    public static function store_interest_snapshot($item, $cart_item_key, $values, $order) {
+        $product = $values['data'];
+        $product_id = $product->get_id();
+        $variation_id = $product->get_variation_id() ?: $product_id;
 
-public static function render_interest_table_frontend($subscription) {
-    if (!$subscription || !$subscription instanceof WC_Subscription) return;
+        if (!has_term('gmp-plan', 'product_cat', $product_id)) return;
 
-    echo '<h3>Gold Plan EMI + Interest Summary</h3>';
-    self::output_interest_table($subscription);
-}
+        $settings = get_option('gmp_interest_settings', []);
+        $interest_data = $settings[$variation_id] ?? $settings[$product_id] ?? ['base' => 0, 'ext' => []];
 
-public static function output_interest_table($subscription) {
-    $user_id = $subscription->get_user_id();
-    $related_orders = wcs_get_related_orders($subscription, ['parent']);
+        $user_id = get_current_user_id();
+        $order_count = GMP_Renewal::get_total_renewals($user_id, $variation_id);
 
-    echo '<table class="shop_table shop_table_responsive">';
-    echo '<thead><tr><th>Order</th><th>Date</th><th>Product</th><th>Base EMI</th><th>Interest %</th><th>Total (EMI + Interest)</th></tr></thead>';
-    echo '<tbody>';
+        $base_interest = floatval($interest_data['base']);
+        $extra_interest = $interest_data['ext'][$order_count + 1] ?? 0;
 
-    foreach ($related_orders as $order_id) {
-        $order = wc_get_order($order_id);
-        if (!$order) continue;
+        $unit_price = $item->get_total() / max($item->get_quantity(), 1);
+        $total_interest = round($unit_price * ($base_interest + $extra_interest) / 100, 2);
 
-        foreach ($order->get_items() as $item) {
-            $product_id = $item->get_variation_id() ?: $item->get_product_id();
-            $base = $item->get_total() / max(1, $item->get_quantity());
-
-            $settings = get_option('gmp_interest_settings', []);
-            $int_rate = floatval($settings[$product_id]['base'] ?? 0);
-            $emi_with_interest = $base + ($base * $int_rate / 100);
-
-            echo '<tr>';
-            echo '<td><a href="' . esc_url(get_edit_post_link($order->get_id())) . '">' . $order->get_order_number() . '</a></td>';
-            echo '<td>' . esc_html($order->get_date_created()->date('Y-m-d')) . '</td>';
-            echo '<td>' . esc_html($item->get_name()) . '</td>';
-            echo '<td>₹' . number_format($base, 2) . '</td>';
-            echo '<td>' . number_format($int_rate, 2) . '%</td>';
-            echo '<td>₹' . number_format($emi_with_interest, 2) . '</td>';
-            echo '</tr>';
-        }
-    }
-
-    echo '</tbody></table>';
-}
-public static function store_interest_snapshot($item, $cart_item_key, $values, $order) {
-    $product = $values['data'];
-    $product_id = $product->get_id();
-    $variation_id = $product->get_variation_id() ?: $product_id;
-
-    if (!has_term('gmp-plan', 'product_cat', $product_id)) return;
-
-    $settings = get_option('gmp_interest_settings', []);
-    $interest_data = $settings[$variation_id] ?? $settings[$product_id] ?? ['base' => 0, 'ext' => []];
-
-    $user_id = get_current_user_id();
-    $order_count = GMP_Renewal::get_total_renewals($user_id, $variation_id);
-
-    $base_interest = floatval($interest_data['base']);
-    $extra_interest = $interest_data['ext'][$order_count + 1] ?? 0;
-
-    $unit_price = $item->get_total() / max($item->get_quantity(), 1);
-    $total_interest = round($unit_price * ($base_interest + $extra_interest) / 100, 2);
-
-    $item->add_meta_data('_gmp_interest_percent', $base_interest + $extra_interest, true);
-    $item->add_meta_data('_gmp_interest_amount', $total_interest, true);
-}
-public static function add_interest_to_admin_related_orders($row, $order, $subscription) {
-    $interest_info = self::get_gmp_interest_info_from_order($order);
-    $row['gmp_interest'] = $interest_info;
-    return $row;
-}
-public static function get_gmp_interest_info_from_order($order) {
-    $total = 0;
-    $percent = 0;
-
-    foreach ($order->get_items() as $item) {
-        $amt = $item->get_meta('_gmp_interest_amount');
-        $pct = $item->get_meta('_gmp_interest_percent');
-
-        if ($amt > 0) {
-            $total += floatval($amt);
-            $percent = floatval($pct); // same per line assumed
-        }
-    }
-
-    return $total > 0 ? wc_price($total) . " ({$percent}%)" : '—';
-}
-
-}
-add_action('woocommerce_product_options_general_product_data', 'gmp_add_extension_fields');
-add_action('woocommerce_process_product_meta', 'gmp_save_extension_fields');
-
-function gmp_add_extension_fields() {
-    global $product_object;
-
-    echo '<div class="options_group">';
-    
-    woocommerce_wp_checkbox([
-        'id' => '_gmp_enable_extension',
-        'label' => __('Enable Extension Period', 'gmp'),
-        'description' => __('Allow paying beyond subscription expiry.'),
-        'desc_tip' => true,
-    ]);
-
-    woocommerce_wp_text_input([
-        'id' => '_gmp_extension_months',
-        'label' => __('Number of Extension Months', 'gmp'),
-        'type' => 'number',
-        'custom_attributes' => [
-            'min' => '0',
-            'step' => '1'
-        ],
-        'description' => __('Number of months the user can optionally pay after subscription ends.'),
-        'desc_tip' => true,
-    ]);
-
-    echo '</div>';
-
-    // Add JS to hide/show field based on checkbox
-    ?>
-    <script>
-        jQuery(function($) {
-            function toggleField() {
-                if ($('#_gmp_enable_extension').is(':checked')) {
-                    $('#_gmp_extension_months').closest('.form-field').show();
-                } else {
-                    $('#_gmp_extension_months').closest('.form-field').hide();
-                }
-            }
-            toggleField();
-            $('#_gmp_enable_extension').on('change', toggleField);
-        });
-    </script>
-    <?php
-}
-
-function gmp_save_extension_fields($post_id) {
-    $enabled = isset($_POST['_gmp_enable_extension']) ? 'yes' : 'no';
-    update_post_meta($post_id, '_gmp_enable_extension', $enabled);
-
-    if (isset($_POST['_gmp_extension_months'])) {
-        update_post_meta($post_id, '_gmp_extension_months', sanitize_text_field($_POST['_gmp_extension_months']));
-    }
-}
-
-add_action('woocommerce_checkout_order_processed', 'gmp_record_subscription_renewal');
-
-function gmp_record_subscription_renewal($order_id) {
-    $order = wc_get_order($order_id);
-    if (!$order || !$order->get_items()) return;
-
-    $user_id = $order->get_user_id();
-    if (!$user_id) return;
-
-    foreach ($order->get_items() as $item) {
-        $product_id   = $item->get_product_id();
-        $variation_id = $item->get_variation_id();
-        $key          = $variation_id ?: $product_id;
-
-        $quantity     = $item->get_quantity(); // In case someone buys more than one
-        $unit_price   = $item->get_total() / max($quantity, 1);
-
-        // Get past renewal data
-        $meta_key     = "gmp_subscription_history_{$key}";
-        $history      = get_user_meta($user_id, $meta_key, true) ?: [];
-
-        $history[] = [
-            'date'     => current_time('Y-m-d H:i:s'),
-            'amount'   => $unit_price,
-            'order_id' => $order_id,
-        ];
-
-        update_user_meta($user_id, $meta_key, $history);
+        $item->add_meta_data('_gmp_interest_percent', $base_interest + $extra_interest, true);
+        $item->add_meta_data('_gmp_interest_amount', $total_interest, true);
     }
 }
