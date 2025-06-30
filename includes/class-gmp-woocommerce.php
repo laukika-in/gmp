@@ -14,7 +14,9 @@ class GMP_WooCommerce {
         add_action('woocommerce_checkout_update_user_meta', [__CLASS__, 'save_user_meta']);
         add_action('template_redirect', [__CLASS__, 'force_enctype']);
         add_action('woocommerce_admin_order_data_after_order_details', [__CLASS__, 'display_admin_order_meta']); 
-        add_action('woocommerce_admin_order_data_after_order_details', [__CLASS__, 'add_admin_emi_interest_summary']);
+        add_action('woocommerce_admin_order_data_after_order_details', 'gmp_admin_related_orders_interest_table');
+        add_action('woocommerce_subscription_details_table', 'gmp_frontend_related_orders_interest_table', 20);
+
 
     }
 
@@ -178,32 +180,52 @@ class GMP_WooCommerce {
         }
         echo '</ul>';
     }
-        public static function add_admin_emi_interest_summary($order) {
-    if (!function_exists('wcs_order_contains_subscription') || !wcs_order_contains_subscription($order)) return;
+        public static function render_interest_table_admin($order) {
+    if (!$order || !$order->get_meta('_subscription_renewal')) return;
 
-    $interest_data = get_option('gmp_interest_settings', []);
-    echo '<div class="order_data_column"><h3>GMP EMI Interest Summary</h3>';
-    echo '<table class="widefat"><thead><tr>
-        <th>Product</th><th>Base EMI</th><th>Interest (%)</th><th>EMI + Interest</th></tr></thead><tbody>';
+    echo '<h3>Gold Plan EMI + Interest Summary</h3>';
+    self::output_interest_table($order);
+}
 
-    foreach ($order->get_items() as $item) {
-        $product = $item->get_product();
-        if (!$product) continue;
-        
-        $pid = $product->get_id();
-        $base_emi = $item->get_total() / max(1, $item->get_quantity());
-        $rate = $interest_data[$pid]['base'] ?? 0;
-        $with_interest = $base_emi + ($base_emi * $rate / 100);
+public static function render_interest_table_frontend($subscription) {
+    if (!$subscription || !$subscription instanceof WC_Subscription) return;
 
-        echo "<tr>
-            <td>{$product->get_name()}</td>
-            <td>₹" . number_format($base_emi, 2) . "</td>
-            <td>{$rate}%</td>
-            <td>₹" . number_format($with_interest, 2) . "</td>
-        </tr>";
+    echo '<h3>Gold Plan EMI + Interest Summary</h3>';
+    self::output_interest_table($subscription);
+}
+
+public static function output_interest_table($subscription) {
+    $user_id = $subscription->get_user_id();
+    $related_orders = wcs_get_related_orders($subscription, ['parent']);
+
+    echo '<table class="shop_table shop_table_responsive">';
+    echo '<thead><tr><th>Order</th><th>Date</th><th>Product</th><th>Base EMI</th><th>Interest %</th><th>Total (EMI + Interest)</th></tr></thead>';
+    echo '<tbody>';
+
+    foreach ($related_orders as $order_id) {
+        $order = wc_get_order($order_id);
+        if (!$order) continue;
+
+        foreach ($order->get_items() as $item) {
+            $product_id = $item->get_variation_id() ?: $item->get_product_id();
+            $base = $item->get_total() / max(1, $item->get_quantity());
+
+            $settings = get_option('gmp_interest_settings', []);
+            $int_rate = floatval($settings[$product_id]['base'] ?? 0);
+            $emi_with_interest = $base + ($base * $int_rate / 100);
+
+            echo '<tr>';
+            echo '<td><a href="' . esc_url(get_edit_post_link($order->get_id())) . '">' . $order->get_order_number() . '</a></td>';
+            echo '<td>' . esc_html($order->get_date_created()->date('Y-m-d')) . '</td>';
+            echo '<td>' . esc_html($item->get_name()) . '</td>';
+            echo '<td>₹' . number_format($base, 2) . '</td>';
+            echo '<td>' . number_format($int_rate, 2) . '%</td>';
+            echo '<td>₹' . number_format($emi_with_interest, 2) . '</td>';
+            echo '</tr>';
+        }
     }
 
-    echo '</tbody></table></div>';
+    echo '</tbody></table>';
 }
 
 }
