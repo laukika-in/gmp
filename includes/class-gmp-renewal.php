@@ -74,40 +74,7 @@ class GMP_Renewal {
      *  - they’ve already paid all the base EMIs (get_payment_count >= lock_period)
      *  - AND they still have unused extension slots.
      */
-    public static function add_extension_button( $actions, $subscription ) {
-        if ( ! is_a( $subscription, 'WC_Subscription' ) ) {
-            return $actions;
-        }
-
-        $user_id        = get_current_user_id();
-        $paid_count     = $subscription->get_payment_count();
-        $subscription_id = $subscription->get_id();
-
-        // look at any one GMP item in the sub
-        foreach ( $subscription->get_items() as $item ) {
-            $prod_id    = $item->get_variation_id() ?: $item->get_product_id();
-            if ( ! has_term( 'gmp-plan', 'product_cat', $prod_id ) ) {
-                continue;
-            }
-
-            $lock       = intval( get_post_meta( $prod_id, '_gmp_lock_period', true ) );
-            $ext_max    = intval( get_post_meta( $prod_id, '_gmp_extension_months', true ) );
-            $ext_used   = intval( get_user_meta( $user_id, "_gmp_extension_used_{$subscription_id}", true ) );
-
-            if ( $paid_count >= $lock && $ext_used < $ext_max ) {
-                $actions['gmp_extend'] = [
-                    'url'  => add_query_arg( 'gmp_extension', $subscription_id, wc_get_checkout_url() ),
-                    'name' => __( 'Pay Extension EMI', 'gold-money-plan' ),
-                ];
-            }
-
-            // we only need one button
-            break;
-        }
-
-        return $actions;
-    }
-
+ 
     /**
      * Utility: How many base‐EMI renewals have they done?
      */
@@ -115,6 +82,33 @@ class GMP_Renewal {
         $history = get_user_meta( $user_id, "gmp_subscription_history_{$product_id}", true );
         return is_array( $history ) ? count( $history ) : 0;
     }
+    public static function prevent_duplicate_subscription( $passed, $product_id, $quantity, $variation_id = 0, $variation = [], $cart_item_data = [] ) {
+    if ( ! is_user_logged_in() ) {
+        return $passed;
+    }
+
+    // Bypass renewals/resubscribe requests
+    if ( ! empty( $_GET['resubscribe'] ) || ! empty( $_REQUEST['subscription_reactivate'] )
+      || ( ! empty( $cart_item_data['subscription_renewal'] ) )
+      || ( ! empty( $cart_item_data['subscription_resubscribe'] ) ) ) {
+      return $passed;
+    }
+
+    $user_id  = get_current_user_id();
+    $check_id = $variation_id ?: $product_id;
+    $product = wc_get_product( $check_id );
+
+    if ( $product && $product->is_type( 'subscription_variation' ) ) {
+        $existing = self::get_active_subscription_for_user( $user_id, $check_id );
+        if ( $existing ) {
+            wc_add_notice( __( 'You already have an active subscription for this EMI plan. Please do not repurchase.', 'gmp' ), 'error' );
+            return false;
+        }
+    }
+
+    return $passed;
+}
+
 }
 
 // initialize it exactly once
