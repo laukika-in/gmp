@@ -17,7 +17,20 @@ class GMP_WooCommerce {
         add_action('woocommerce_admin_order_data_after_order_details', 'gmp_admin_related_orders_interest_table');
         add_action('woocommerce_subscription_details_table', 'gmp_frontend_related_orders_interest_table', 20);
         add_action('woocommerce_checkout_create_order_line_item', [__CLASS__, 'store_interest_snapshot'], 10, 4);
+add_filter('wcs_related_orders_table_row', [__CLASS__, 'add_interest_to_admin_related_orders'], 10, 3);
 
+add_filter('wcs_my_subscriptions_related_orders_columns', function($columns) {
+    $columns['gmp_interest'] = __('Interest (₹)', 'gmp');
+    return $columns;
+});
+
+add_filter('wcs_my_subscriptions_related_orders_column_gmp_interest', function($order) {
+    return GMP_WooCommerce::get_gmp_interest_info_from_order($order);
+});
+add_filter('wcs_related_orders_table_header', function($headers) {
+    $headers['gmp_interest'] = __('Interest (₹)', 'gmp');
+    return $headers;
+});
 
     }
 
@@ -249,6 +262,27 @@ public static function store_interest_snapshot($item, $cart_item_key, $values, $
 
     $item->add_meta_data('_gmp_interest_percent', $base_interest + $extra_interest, true);
     $item->add_meta_data('_gmp_interest_amount', $total_interest, true);
+}
+public static function add_interest_to_admin_related_orders($row, $order, $subscription) {
+    $interest_info = self::get_gmp_interest_info_from_order($order);
+    $row['gmp_interest'] = $interest_info;
+    return $row;
+}
+public static function get_gmp_interest_info_from_order($order) {
+    $total = 0;
+    $percent = 0;
+
+    foreach ($order->get_items() as $item) {
+        $amt = $item->get_meta('_gmp_interest_amount');
+        $pct = $item->get_meta('_gmp_interest_percent');
+
+        if ($amt > 0) {
+            $total += floatval($amt);
+            $percent = floatval($pct); // same per line assumed
+        }
+    }
+
+    return $total > 0 ? wc_price($total) . " ({$percent}%)" : '—';
 }
 
 }
