@@ -27,9 +27,10 @@ function gmp_get_interest_data_for_subscription($subscription) {
                 'date'       => $entry['date'],
                 'order_id'   => $entry['order_id'],
                 'emi'        => wc_price($emi),
-                'interest'   => wc_price($interest),
+                'interest'   => wc_price($interest) . " ({$rate}%)",
                 'total'      => wc_price($emi_with_interest),
             ];
+
         }
     }
 
