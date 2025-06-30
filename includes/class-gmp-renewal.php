@@ -95,36 +95,41 @@ class GMP_Renewal {
 	}
 
 	public static function show_extension_button( $subscription ) {
-		$user_id = get_current_user_id();
-		$product_id = null;
-		$variation_id = null;
+    $user_id = get_current_user_id();
+    $product_id = null;
+    $variation_id = null;
 
-		foreach ( $subscription->get_items() as $item ) {
-			$product_id = $item->get_product_id();
-			$variation_id = $item->get_variation_id() ?: $product_id;
-			break;
-		}
+    foreach ( $subscription->get_items() as $item ) {
+        $product_id = $item->get_product_id();
+        $variation_id = $item->get_variation_id() ?: $product_id;
+        break;
+    }
 
-		if ( ! $product_id || ! has_term( 'gmp-plan', 'product_cat', $product_id ) ) {
-			return;
-		}
+    if ( ! $product_id || ! has_term( 'gmp-plan', 'product_cat', $product_id ) ) {
+        return;
+    }
 
-		$settings      = get_option( 'gmp_interest_settings', [] );
-		$ext_interest  = $settings[ $product_id ]['ext'] ?? [];
-		$ext_limit     = count( $ext_interest );
+    $settings      = get_option( 'gmp_interest_settings', [] );
+    $ext_interest  = $settings[ $product_id ]['ext'] ?? [];
+    $ext_limit     = count( $ext_interest );
 
-		$history_key = "gmp_subscription_history_{$variation_id}";
-		$history     = get_user_meta( $user_id, $history_key, true ) ?: [];
-		$base_paid   = count( $history );
+    $history_key = "gmp_subscription_history_{$variation_id}";
+    $history     = get_user_meta( $user_id, $history_key, true ) ?: [];
+    $base_paid   = count( $history );
 
-		$used_ext    = intval( get_user_meta( $user_id, "_gmp_extension_used_{$subscription->get_id()}", true ) );
-		$payment_count = count( $subscription->get_payment_schedule() );
+    $used_ext = intval( get_user_meta( $user_id, "_gmp_extension_used_{$subscription->get_id()}", true ) );
 
-		if ( $base_paid >= $payment_count && $used_ext < $ext_limit ) {
-			$checkout_url = wc_get_checkout_url() . '?gmp_extension=' . $subscription->get_id();
-			echo '<p><a class="button alt" href="' . esc_url( $checkout_url ) . '">Pay Extension EMI</a></p>';
-		}
-	}
+    // Base period = number of base installments (EMIs), usually equal to subscription length
+    $billing_length = $subscription->get_billing_length(); // Default is 0 (infinite)
+    $base_installments = $billing_length > 0 ? $billing_length : $subscription->get_item_count(); // fallback
+
+    // Only show button after all base installments paid
+    if ( $base_paid >= $base_installments && $used_ext < $ext_limit ) {
+        $checkout_url = wc_get_checkout_url() . '?gmp_extension=' . $subscription->get_id();
+        echo '<p><a class="button alt" href="' . esc_url( $checkout_url ) . '">Pay Extension EMI</a></p>';
+    }
+}
+
 
 	public static function get_total_renewals( $user_id, $variation_id ) {
 		$history = get_user_meta( $user_id, "gmp_subscription_history_{$variation_id}", true );
