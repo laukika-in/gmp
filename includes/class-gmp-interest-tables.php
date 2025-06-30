@@ -8,24 +8,24 @@ function gmp_get_interest_data_for_subscription($subscription) {
         if (!$order) continue;
 
         foreach ($order->get_items() as $item) {
-            $emi = floatval($item->get_total()) / max(1, $item->get_quantity());
+            $emi      = floatval($item->get_total()) / max(1, $item->get_quantity());
             $interest = floatval($item->get_meta('_gmp_interest_amount'));
-            $percent = floatval($item->get_meta('_gmp_interest_percent'));
+            $percent  = floatval($item->get_meta('_gmp_interest_percent'));
 
             $data[] = [
-                'index'    => count($data) + 1,
-                'date'     => $order->get_date_created()->date('Y-m-d'),
-                'order_id' => $order_id,
-                'emi'      => wc_price($emi),
-                'interest' => wc_price($interest) . " ({$percent}%)",
-                'total'    => wc_price($emi + $interest),
+                'index'      => count($data) + 1,
+                'date'       => $order->get_date_created()->date('Y-m-d'),
+                'order_id'   => $order->get_view_order_url(),
+                'order_link' => $order->get_id(),
+                'emi'        => wc_price($emi),
+                'interest'   => wc_price($interest) . " ({$percent}%)",
+                'total'      => wc_price($emi + $interest),
             ];
         }
     }
 
     return $data;
 }
-
 
 function gmp_admin_related_orders_interest_table($order) {
     if (!wcs_order_contains_subscription($order)) return;
@@ -52,7 +52,11 @@ function gmp_render_interest_table($subscription, $context = 'admin') {
         echo '<tr>';
         echo "<td>{$row['index']}</td>";
         echo "<td>{$row['date']}</td>";
-        echo "<td><a href='" . esc_url(admin_url("post.php?post={$row['order_id']}&action=edit")) . "'>#{$row['order_id']}</a></td>";
+       $link = ($context === 'frontend')
+    ? esc_url($row['order_link'])
+    : esc_url(admin_url("post.php?post={$row['order_link']}&action=edit"));
+
+echo "<td><a href='{$link}'>#{$row['order_id']}</a></td>";
         echo "<td>{$row['emi']}</td>";
         echo "<td>{$row['interest']}</td>";
         echo "<td>{$row['total']}</td>";
