@@ -3,39 +3,29 @@
 function gmp_get_interest_data_for_subscription($subscription) {
     $data = [];
 
-    $user_id = $subscription->get_user_id();
+    foreach ($subscription->get_related_orders('all') as $order_id) {
+        $order = wc_get_order($order_id);
+        if (!$order) continue;
 
-    foreach ($subscription->get_items() as $item) {
-        $variation_id = $item->get_variation_id();
-        $product_id   = $item->get_product_id();
-        $product      = wc_get_product($variation_id ?: $product_id);
-        $variation_id = $variation_id ?: $product_id;
-
-        $history = get_user_meta($user_id, "gmp_subscription_history_{$variation_id}", true);
-        $base_rate = floatval(get_option("gmp_interest_base_{$variation_id}", 0));
-
-        if (!$history || !is_array($history)) continue;
-
-        foreach ($history as $index => $entry) {
-            $rate = $base_rate;
-            $emi  = floatval($entry['amount']);
-            $interest = round(($emi * $rate / 100), 2);
-            $emi_with_interest = $emi + $interest;
+        foreach ($order->get_items() as $item) {
+            $emi = floatval($item->get_total()) / max(1, $item->get_quantity());
+            $interest = floatval($item->get_meta('_gmp_interest_amount'));
+            $percent = floatval($item->get_meta('_gmp_interest_percent'));
 
             $data[] = [
-                'index'      => $index + 1,
-                'date'       => $entry['date'],
-                'order_id'   => $entry['order_id'],
-                'emi'        => wc_price($emi),
-                'interest'   => wc_price($interest) . " ({$rate}%)",
-                'total'      => wc_price($emi_with_interest),
+                'index'    => count($data) + 1,
+                'date'     => $order->get_date_created()->date('Y-m-d'),
+                'order_id' => $order_id,
+                'emi'      => wc_price($emi),
+                'interest' => wc_price($interest) . " ({$percent}%)",
+                'total'    => wc_price($emi + $interest),
             ];
-
         }
     }
 
     return $data;
 }
+
 
 function gmp_admin_related_orders_interest_table($order) {
     if (!wcs_order_contains_subscription($order)) return;
