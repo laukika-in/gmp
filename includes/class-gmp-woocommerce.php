@@ -18,7 +18,7 @@ class GMP_WooCommerce {
 
         // Interest Tables (Frontend + Admin)
         add_action('woocommerce_admin_order_data_after_order_details', ['GMP_Interest_Table', 'render_admin']);
-        add_action('woocommerce_subscription_details_table', ['GMP_Interest_Table', 'render_frontend'], 20);
+        add_actionadd_action('woocommerce_subscription_details_table', ['GMP_Interest_Tables', 'frontend'], 30);
 
         // Interest Snapshots
         add_action('woocommerce_checkout_create_order_line_item', [__CLASS__, 'store_interest_snapshot'], 10, 4);
@@ -187,7 +187,7 @@ class GMP_WooCommerce {
 public static function store_interest_snapshot($item, $cart_item_key, $values, $order) {
     $product = $values['data'];
     $variation_id = $product->get_variation_id();
-    $product_id = $product->get_parent_id() ?: $product->get_id();
+    $product_id = $item->get_product_id();  
 
     if (!has_term('gmp-plan', 'product_cat', $product_id)) return;
 

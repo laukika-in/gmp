@@ -1,4 +1,5 @@
 <?php
+class GMP_Interest_Tables {
 
 function gmp_get_interest_data_for_subscription($subscription) {
     $data = [];
@@ -65,4 +66,5 @@ echo "<td><a href='{$link}'>#{$row['order_no']}</a></td>";
         echo '</tr>';
     }
     echo '</tbody></table>';
+}
 }
