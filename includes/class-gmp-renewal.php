@@ -1,6 +1,9 @@
 <?php
  
 class GMP_Renewal {
+    public static function init() {
+        // You can add renewal-related hooks here in future
+    }
     public static function record($order_id) {
         $order = wc_get_order($order_id);
         if (!$order || !$order->get_items()) return;
