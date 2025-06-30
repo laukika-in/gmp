@@ -21,6 +21,7 @@ require_once GMP_PLUGIN_PATH . 'includes/class-gmp-woocommerce.php';
 require_once GMP_PLUGIN_PATH . 'includes/helper-functions.php';
 require_once GMP_PLUGIN_PATH . 'includes/class-gmp-settings.php';
 require_once GMP_PLUGIN_PATH . 'includes/class-gmp-renewal.php';
+require_once GMP_PLUGIN_PATH . 'includes/class-gmp-interest-tables.php';
 
 // Initialize
 add_action('plugins_loaded', ['GMP_Init', 'init']);
