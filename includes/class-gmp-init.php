@@ -33,7 +33,8 @@ class GMP_Init {
         });
 
         // Log renewals (used for extension interest logic)
-        add_action('woocommerce_checkout_order_processed', ['GMP_Renewal', 'record']);
+      add_action( 'woocommerce_checkout_order_processed', [ 'GMP_Renewal', 'record_subscription_renewal' ] );
+
     }
 
     public static function enqueue_assets() {

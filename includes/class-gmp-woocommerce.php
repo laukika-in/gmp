@@ -194,7 +194,7 @@ class GMP_WooCommerce {
 
 public static function store_interest_snapshot($item, $cart_item_key, $values, $order) {
     $product = $values['data'];
-    $variation_id = $product->get_variation_id();
+    $variation_id = $product->get_id();
     $product_id = $item->get_product_id();  
 
     if (!has_term('gmp-plan', 'product_cat', $product_id)) return;
