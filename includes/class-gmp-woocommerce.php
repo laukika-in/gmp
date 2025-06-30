@@ -16,6 +16,7 @@ class GMP_WooCommerce {
         add_action('woocommerce_admin_order_data_after_order_details', [__CLASS__, 'display_admin_order_meta']); 
         add_action('woocommerce_admin_order_data_after_order_details', 'gmp_admin_related_orders_interest_table');
         add_action('woocommerce_subscription_details_table', 'gmp_frontend_related_orders_interest_table', 20);
+        add_action('woocommerce_checkout_create_order_line_item', [__CLASS__, 'store_interest_snapshot'], 10, 4);
 
 
     }
@@ -226,6 +227,28 @@ public static function output_interest_table($subscription) {
     }
 
     echo '</tbody></table>';
+}
+public static function store_interest_snapshot($item, $cart_item_key, $values, $order) {
+    $product = $values['data'];
+    $product_id = $product->get_id();
+    $variation_id = $product->get_variation_id() ?: $product_id;
+
+    if (!has_term('gmp-plan', 'product_cat', $product_id)) return;
+
+    $settings = get_option('gmp_interest_settings', []);
+    $interest_data = $settings[$variation_id] ?? $settings[$product_id] ?? ['base' => 0, 'ext' => []];
+
+    $user_id = get_current_user_id();
+    $order_count = GMP_Renewal::get_total_renewals($user_id, $variation_id);
+
+    $base_interest = floatval($interest_data['base']);
+    $extra_interest = $interest_data['ext'][$order_count + 1] ?? 0;
+
+    $unit_price = $item->get_total() / max($item->get_quantity(), 1);
+    $total_interest = round($unit_price * ($base_interest + $extra_interest) / 100, 2);
+
+    $item->add_meta_data('_gmp_interest_percent', $base_interest + $extra_interest, true);
+    $item->add_meta_data('_gmp_interest_amount', $total_interest, true);
 }
 
 }
