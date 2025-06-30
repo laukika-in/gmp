@@ -64,34 +64,52 @@ class GMP_Renewal {
      * Prevent adding a new purchase of the same variation
      * when there’s already an Active/On-Hold subscription.
      */
-    public static function prevent_duplicate_subscription( $passed, $product_id, $quantity, $variation_id = 0, $variation = [], $cart_item_data = [] ) {
-        if ( ! is_user_logged_in() ) {
-            return $passed;
-        }
-        if ( ! function_exists( 'wcs_get_users_subscriptions' ) ) {
-            return $passed;
-        }
+/**
+ * Prevent adding a brand-new subscription of the same plan to cart,
+ * but allow true renewal/resubscribe flows.
+ */
+public static function prevent_duplicate_subscription( $passed, $product_id, $quantity, $variation_id = 0, $variation = [], $cart_item_data = [] ) {
+    // must be logged in
+    if ( ! is_user_logged_in() ) {
+        return $passed;
+    }
 
-        $check = $variation_id ?: $product_id;
-        // skip internal resubscribe/renewal flags
-        if ( ! empty( $_GET['resubscribe'] ) || ! empty( $_REQUEST['subscription_reactivate'] ) ) {
-            return $passed;
-        }
+    // only for GMP subscription variations
+    $check_id = $variation_id ?: $product_id;
+    $product  = wc_get_product( $check_id );
+    if ( ! $product || ! $product->is_type( 'subscription_variation' ) ) {
+        return $passed;
+    }
 
-        $subs = wcs_get_users_subscriptions( get_current_user_id() );
+    // 1) If WooCommerce Subscriptions is driving a renewal or resubscribe, let it pass
+    if ( ! empty( $cart_item_data['subscription_renewal'] )
+      || ! empty( $cart_item_data['subscription_resubscribe'] )
+      || ! empty( $_GET['resubscribe'] )
+      || ! empty( $_REQUEST['subscription_reactivate'] )
+      || ( function_exists( 'wcs_cart_is_renewal' ) && wcs_cart_is_renewal() )
+    ) {
+        return $passed;
+    }
+
+    // 2) Now block if there’s still an active/on-hold subscription for this variation
+    if ( function_exists( 'wcs_get_users_subscriptions' ) ) {
+        $user_id = get_current_user_id();
+        $subs    = wcs_get_users_subscriptions( $user_id );
         foreach ( $subs as $sub ) {
             if ( $sub->has_status( [ 'active', 'on-hold' ] ) ) {
                 foreach ( $sub->get_items() as $item ) {
-                    if ( $item->get_variation_id() === $check ) {
+                    if ( $item->get_variation_id() === $check_id ) {
                         wc_add_notice( __( 'You already have an active subscription for this EMI plan. Please do not repurchase.', 'gmp' ), 'error' );
                         return false;
                     }
                 }
             }
         }
-
-        return $passed;
     }
+
+    return $passed;
+}
+
 }
 
 // initialize it exactly once
