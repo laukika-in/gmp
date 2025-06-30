@@ -187,7 +187,10 @@ class GMP_WooCommerce {
     public static function store_interest_snapshot($item, $cart_item_key, $values, $order) {
         $product       = $values['data'];
         $variation_id  = $product->get_id();
-        $product_id    = $product->is_type('variation') ? $product->get_parent_id() : $product->get_id();
+        $product_id = $product->is_type('subscription_variation')
+    ? $product->get_parent_id()
+    : $product->get_id();
+
 
         if (!has_term('gmp-plan', 'product_cat', $product_id)) return;
 
