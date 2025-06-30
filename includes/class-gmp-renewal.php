@@ -32,23 +32,34 @@ class GMP_Renewal {
 /**
      * Record each GMP‐Plan item in the order as a renewal in user meta.
      */
-    public static function record_subscription_renewal( $order_id ) {
-        $order   = wc_get_order( $order_id );
-        $user_id = $order ? $order->get_user_id() : 0;
-        if ( ! $user_id ) return;
+   public static function record_subscription_renewal( $order_id ) {
+        $order = wc_get_order( $order_id );
+        if ( ! $order || ! $order->get_items() ) {
+            return;
+        }
+        $user_id = $order->get_user_id();
+        if ( ! $user_id ) {
+            return;
+        }
 
         foreach ( $order->get_items() as $item ) {
-            $prod_id = $item->get_variation_id() ?: $item->get_product_id();
-            if ( ! has_term( 'gmp-plan', 'product_cat', $prod_id ) ) continue;
+            $product_id   = $item->get_product_id();
+            if ( ! has_term( 'gmp-plan', 'product_cat', $product_id ) ) {
+                continue;
+            }
 
-            $history   = get_user_meta( $user_id, "gmp_subscription_history_{$prod_id}", true ) ?: [];
-            $unit      = floatval( $item->get_total() ) / max( 1, $item->get_quantity() );
-            $history[] = [
+            $variation_id = $item->get_variation_id() ?: $product_id;
+            $meta_key     = "gmp_subscription_history_{$variation_id}";
+            $history      = get_user_meta( $user_id, $meta_key, true ) ?: [];
+
+            $unit_price = $item->get_total() / max( 1, $item->get_quantity() );
+            $history[]  = [
                 'date'     => current_time( 'mysql' ),
-                'amount'   => $unit,
+                'amount'   => $unit_price,
                 'order_id' => $order_id,
             ];
-            update_user_meta( $user_id, "gmp_subscription_history_{$prod_id}", $history );
+
+            update_user_meta( $user_id, $meta_key, $history );
         }
     }
 
@@ -78,37 +89,56 @@ class GMP_Renewal {
     /**
      * Utility: How many base‐EMI renewals have they done?
      */
-    public static function get_total_renewals( $user_id, $product_id ) {
-        $history = get_user_meta( $user_id, "gmp_subscription_history_{$product_id}", true );
+      public static function get_total_renewals( $user_id, $variation_id ) {
+        $history = get_user_meta( $user_id, "gmp_subscription_history_{$variation_id}", true );
         return is_array( $history ) ? count( $history ) : 0;
     }
     public static function prevent_duplicate_subscription( $passed, $product_id, $quantity, $variation_id = 0, $variation = [], $cart_item_data = [] ) {
-    if ( ! is_user_logged_in() ) {
-        return $passed;
-    }
+        if ( ! is_user_logged_in() ) {
+            return $passed;
+        }
 
-    // Bypass renewals/resubscribe requests
-    if ( ! empty( $_GET['resubscribe'] ) || ! empty( $_REQUEST['subscription_reactivate'] )
-      || ( ! empty( $cart_item_data['subscription_renewal'] ) )
-      || ( ! empty( $cart_item_data['subscription_resubscribe'] ) ) ) {
-      return $passed;
-    }
+        $check_id = $variation_id ?: $product_id;
+        $product  = wc_get_product( $check_id );
 
-    $user_id  = get_current_user_id();
-    $check_id = $variation_id ?: $product_id;
-    $product = wc_get_product( $check_id );
+        if ( ! $product || ! $product->is_type( 'subscription_variation' ) ) {
+            return $passed;
+        }
 
-    if ( $product && $product->is_type( 'subscription_variation' ) ) {
-        $existing = self::get_active_subscription_for_user( $user_id, $check_id );
+        // WooCommerce Subscriptions will set these on genuine renewals / resubscribes
+        if ( ! empty( $_GET['resubscribe'] )
+          || ! empty( $_REQUEST['subscription_reactivate'] )
+          || ! empty( $cart_item_data['subscription_renewal'] )
+          || ! empty( $cart_item_data['subscription_resubscribe'] ) ) {
+            return $passed;
+        }
+
+        $existing = self::get_active_subscription_for_user( get_current_user_id(), $check_id );
         if ( $existing ) {
             wc_add_notice( __( 'You already have an active subscription for this EMI plan. Please do not repurchase.', 'gmp' ), 'error' );
             return false;
         }
+
+        return $passed;
     }
+public static function get_active_subscription_for_user( $user_id, $variation_id ) {
+        if ( ! function_exists( 'wcs_get_users_subscriptions' ) ) {
+            return false;
+        }
 
-    return $passed;
-}
-
+        $subs = wcs_get_users_subscriptions( $user_id );
+        foreach ( $subs as $sub ) {
+            if ( ! in_array( $sub->get_status(), [ 'active', 'on-hold' ], true ) ) {
+                continue;
+            }
+            foreach ( $sub->get_items() as $item ) {
+                if ( $item->get_variation_id() === $variation_id ) {
+                    return $sub;
+                }
+            }
+        }
+        return false;
+    }
 }
 
 // initialize it exactly once
