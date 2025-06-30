@@ -1,12 +1,7 @@
 <?php
-
+ 
 class GMP_Renewal {
-
-    public static function init() {
-        add_action('woocommerce_checkout_order_processed', [__CLASS__, 'record_subscription_renewal']);
-    }
-
-    public static function record_subscription_renewal($order_id) {
+    public static function record($order_id) {
         $order = wc_get_order($order_id);
         if (!$order || !$order->get_items()) return;
 
@@ -16,19 +11,16 @@ class GMP_Renewal {
         foreach ($order->get_items() as $item) {
             $product_id   = $item->get_product_id();
             $variation_id = $item->get_variation_id();
-            $product      = wc_get_product($variation_id ?: $product_id);
+            $key          = $variation_id ?: $product_id;
 
-            if (!$product || !has_term('gmp-plan', 'product_cat', $product_id)) continue;
+            $quantity     = $item->get_quantity();
+            $unit_price   = $item->get_total() / max($quantity, 1);
 
-            $key      = $variation_id ?: $product_id;
-            $meta_key = "gmp_subscription_history_{$key}";
-
-            $quantity   = $item->get_quantity();
-            $unit_price = $item->get_total() / max($quantity, 1);
-            $history    = get_user_meta($user_id, $meta_key, true) ?: [];
+            $meta_key     = "gmp_subscription_history_{$key}";
+            $history      = get_user_meta($user_id, $meta_key, true) ?: [];
 
             $history[] = [
-                'date'     => current_time('mysql'),
+                'date'     => current_time('Y-m-d H:i:s'),
                 'amount'   => $unit_price,
                 'order_id' => $order_id,
             ];
@@ -36,36 +28,8 @@ class GMP_Renewal {
             update_user_meta($user_id, $meta_key, $history);
         }
     }
-
-    public static function get_total_renewals($user_id, $product_or_variation_id) {
-        $history = get_user_meta($user_id, "gmp_subscription_history_{$product_or_variation_id}", true);
-        return is_array($history) ? count($history) : 0;
-    }
-
-    public static function get_renewal_history($user_id, $product_or_variation_id) {
-        return get_user_meta($user_id, "gmp_subscription_history_{$product_or_variation_id}", true) ?: [];
-    }
-
-    public static function get_active_subscription_for_user($user_id, $variation_id) {
-        if (!function_exists('wcs_get_users_subscriptions')) return false;
-
-        $subscriptions = wcs_get_users_subscriptions($user_id);
-        foreach ($subscriptions as $sub) {
-            foreach ($sub->get_items() as $item) {
-                if ($item->get_variation_id() === $variation_id && $sub->has_status(['active', 'on-hold'])) {
-                    return $sub;
-                }
-            }
-        }
-        return false;
-    }
-
-    public static function record_extension_payment($user_id, $variation_id, $subscription_id, $amount) {
-        $used = get_user_meta($user_id, "_gmp_extension_used_{$subscription_id}", true) ?: 0;
-        $used++;
-        update_user_meta($user_id, "_gmp_extension_used_{$subscription_id}", $used);
-    }
 }
+
 
 // Block cart if same variation is already subscribed
 add_filter('woocommerce_add_to_cart_validation', function ($passed, $product_id, $quantity, $variation_id = 0, $variation = [], $cart_item_data = []) {
