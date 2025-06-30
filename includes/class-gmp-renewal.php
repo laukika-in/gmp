@@ -5,9 +5,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class GMP_Renewal {
 
-	/**
-	 * Hook everything exactly once.
-	 */
 	public static function init() {
 		// 1) Record every order for GMP Plans
 		add_action( 'woocommerce_checkout_order_processed', [ __CLASS__, 'record_subscription_renewal' ], 10, 1 );
@@ -18,16 +15,10 @@ class GMP_Renewal {
 		// 3) Prevent adding a duplicate active subscription to the cart
 		add_filter( 'woocommerce_add_to_cart_validation', [ __CLASS__, 'prevent_duplicate_subscription' ], 20, 6 );
 
-		// 4) Show “Renew Now” in My Account → Subscriptions list
-		add_filter( 'woocommerce_my_account_my_subscriptions_actions', [ __CLASS__, 'add_extension_button' ], 10, 2 );
-
-		// 5) And also on the single-subscription view
-		add_filter( 'wcs_view_subscription_actions', [ __CLASS__, 'add_extension_button' ], 10, 2 );
+		// 4) Show extension button on subscription detail page
+		add_action( 'wcs_subscription_details_table_after_dates', [ __CLASS__, 'show_extension_button' ] );
 	}
 
-	/**
-	 * 1) Record each GMP‐Plan item in the order as a renewal in user meta.
-	 */
 	public static function record_subscription_renewal( $order_id ) {
 		$order = wc_get_order( $order_id );
 		if ( ! $order || ! $order->get_items() ) {
@@ -40,10 +31,10 @@ class GMP_Renewal {
 
 		foreach ( $order->get_items() as $item ) {
 			$product_id = $item->get_product_id();
-			// only GMP plans
 			if ( ! has_term( 'gmp-plan', 'product_cat', $product_id ) ) {
 				continue;
 			}
+
 			$variation_id = $item->get_variation_id() ?: $product_id;
 			$meta_key     = "gmp_subscription_history_{$variation_id}";
 			$history      = get_user_meta( $user_id, $meta_key, true ) ?: [];
@@ -59,26 +50,21 @@ class GMP_Renewal {
 		}
 	}
 
-	/**
-	 * 2) Record an extension payment if the URL had ?gmp_extension={sub_id}
-	 */
 	public static function record_extension_payment( $order_id ) {
 		if ( empty( $_GET['gmp_extension'] ) ) {
 			return;
 		}
-		$sub_id      = intval( $_GET['gmp_extension'] );
+		$sub_id = intval( $_GET['gmp_extension'] );
 		$subscription = wcs_get_subscription( $sub_id );
 		if ( ! $subscription ) {
 			return;
 		}
+
 		$user_id = $subscription->get_user_id();
 		$used    = intval( get_user_meta( $user_id, "_gmp_extension_used_{$sub_id}", true ) );
 		update_user_meta( $user_id, "_gmp_extension_used_{$sub_id}", $used + 1 );
 	}
 
-	/**
-	 * 3) Block “Add to cart” if an active subscription already exists
-	 */
 	public static function prevent_duplicate_subscription( $passed, $product_id, $quantity, $variation_id = 0, $variation_data = [], $cart_item_data = [] ) {
 		if ( ! is_user_logged_in() ) {
 			return $passed;
@@ -90,11 +76,11 @@ class GMP_Renewal {
 			return $passed;
 		}
 
-		// allow real renewals/resubscribes
-		if ( ! empty( $_GET['resubscribe'] )
-		  || ! empty( $_REQUEST['subscription_reactivate'] )
-		  || ! empty( $cart_item_data['subscription_renewal'] )
-		  || ! empty( $cart_item_data['subscription_resubscribe'] )
+		if (
+			! empty( $_GET['resubscribe'] ) ||
+			! empty( $_REQUEST['subscription_reactivate'] ) ||
+			! empty( $cart_item_data['subscription_renewal'] ) ||
+			! empty( $cart_item_data['subscription_resubscribe'] )
 		) {
 			return $passed;
 		}
@@ -108,57 +94,43 @@ class GMP_Renewal {
 		return $passed;
 	}
 
-	/**
-	 * 4 & 5) Inject “Renew Now” button until extension slots run out.
-	 */
-	public static function add_extension_button( $actions, $subscription ) {
-		if ( ! $subscription instanceof WC_Subscription ) {
-			return $actions;
+	public static function show_extension_button( $subscription ) {
+		$user_id = get_current_user_id();
+		$product_id = null;
+		$variation_id = null;
+
+		foreach ( $subscription->get_items() as $item ) {
+			$product_id = $item->get_product_id();
+			$variation_id = $item->get_variation_id() ?: $product_id;
+			break;
 		}
 
-		$user_id      = $subscription->get_user_id();
-		$sub_id       = $subscription->get_id();
-		$items        = $subscription->get_items();
-		$first_item   = reset( $items );
-		$variation_id = $first_item ? $first_item->get_variation_id() : 0;
-
-		// product’s extension settings
-		$enabled    = get_post_meta( $variation_id, '_gmp_enable_extension', true ) === 'yes';
-		$max_ext    = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
-		$used       = intval( get_user_meta( $user_id, "_gmp_extension_used_{$sub_id}", true ) );
-		$paid       = self::get_total_renewals( $user_id, $variation_id );
-		$base_length = intval( $subscription->get_meta( '_subscription_length', true ) );
-
-		// show if they’ve done the base term and still have slots, even if “active”
-		if (
-			$enabled
-			&& in_array( $subscription->get_status(), [ 'active', 'expired' ], true )
-			&& $paid >= $base_length
-			&& $used < $max_ext
-		) {
-			$resub_url = wcs_get_users_resubscribe_url( $subscription );
-			$resub_url = add_query_arg( 'gmp_extension', $sub_id, $resub_url );
-
-			$actions['gmp_extension'] = [
-				'url'  => $resub_url,
-				'name' => __( 'Renew Now', 'gold-money-plan' ),
-			];
+		if ( ! $product_id || ! has_term( 'gmp-plan', 'product_cat', $product_id ) ) {
+			return;
 		}
 
-		return $actions;
+		$settings      = get_option( 'gmp_interest_settings', [] );
+		$ext_interest  = $settings[ $product_id ]['ext'] ?? [];
+		$ext_limit     = count( $ext_interest );
+
+		$history_key = "gmp_subscription_history_{$variation_id}";
+		$history     = get_user_meta( $user_id, $history_key, true ) ?: [];
+		$base_paid   = count( $history );
+
+		$used_ext    = intval( get_user_meta( $user_id, "_gmp_extension_used_{$subscription->get_id()}", true ) );
+		$payment_count = count( $subscription->get_payment_schedule() );
+
+		if ( $base_paid >= $payment_count && $used_ext < $ext_limit ) {
+			$checkout_url = wc_get_checkout_url() . '?gmp_extension=' . $subscription->get_id();
+			echo '<p><a class="button alt" href="' . esc_url( $checkout_url ) . '">Pay Extension EMI</a></p>';
+		}
 	}
 
-	/**
-	 * How many base EMI payments have they done?
-	 */
 	public static function get_total_renewals( $user_id, $variation_id ) {
 		$history = get_user_meta( $user_id, "gmp_subscription_history_{$variation_id}", true );
 		return is_array( $history ) ? count( $history ) : 0;
 	}
 
-	/**
-	 * Find any active / on-hold subscription for that variation
-	 */
 	private static function get_active_subscription_for_user( $user_id, $variation_id ) {
 		if ( ! function_exists( 'wcs_get_users_subscriptions' ) ) {
 			return false;
@@ -178,5 +150,4 @@ class GMP_Renewal {
 	}
 }
 
-// fire it up
 GMP_Renewal::init();
