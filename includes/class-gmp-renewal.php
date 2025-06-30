@@ -99,26 +99,32 @@ add_filter('woocommerce_add_to_cart_validation', function ($passed, $product_id,
 add_filter('wcs_view_subscription_actions', function ($actions, $subscription) {
     $user_id = get_current_user_id();
 
+    $processed = [];
     foreach ($subscription->get_items() as $item) {
         $variation_id = $item->get_variation_id();
         $product_id   = $item->get_product_id();
         $product      = wc_get_product($variation_id ?: $product_id);
+        $variation_id = $variation_id ?: $product_id;
+
+        // Prevent duplicates if multiple items reference same variation/product
+        if (in_array($variation_id, $processed)) continue;
+        $processed[] = $variation_id;
 
         $ext_enabled = get_post_meta($product->get_id(), '_gmp_enable_extension', true);
         $ext_months  = intval(get_post_meta($product->get_id(), '_gmp_extension_months', true));
         $ext_used    = get_user_meta($user_id, "_gmp_extension_used_{$subscription->get_id()}", true) ?: 0;
-$completed = $subscription->get_payment_count();
+        $completed = $subscription->get_payment_count();
 
-$items = $subscription->get_items();
-$total_count = 0;
+        $items = $subscription->get_items();
+        $total_count = 0;
 
-foreach ($items as $item) {
-    $product = $item->get_product();
-    if ($product && $product->is_type('subscription_variation')) {
-        $billing_length = $product->get_meta('_subscription_length');
-        $total_count = intval($billing_length);
-    }
-}
+        foreach ($items as $item) {
+            $product = $item->get_product();
+            if ($product && $product->is_type('subscription_variation')) {
+                $billing_length = $product->get_meta('_subscription_length');
+                $total_count = intval($billing_length);
+            }
+        }
 
 
         if (
