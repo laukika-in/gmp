@@ -300,7 +300,8 @@ public static function initialize_interest_schedule( $subscription, $order ) {
         $ext_pcts   = is_array( $data['ext'] ) ? $data['ext'] : [];
 
         // 3a) Original term length (lock period)
-       $lock_days = intval( $product->get_meta( '_subscription_length', true ) );
+      $lock_days         = max( 0, $total_instalments - $extension_count );
+
 
         // 3b) How many extension days you allowed
         $extension_count = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
