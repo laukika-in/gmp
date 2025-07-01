@@ -16,7 +16,8 @@ class GMP_Renewal {
 		add_filter( 'woocommerce_add_to_cart_validation', [ __CLASS__, 'prevent_duplicate_subscription' ], 20, 6 );
 
 		// 4) Show extension button on subscription detail page
-		add_action( 'wcs_subscription_details_table_after_dates', [ __CLASS__, 'show_extension_button' ] );
+		add_filter( 'wcs_view_subscription_actions', [ __CLASS__, 'inject_extension_button_action' ], 10, 2 );
+
 	}
 
 	public static function record_subscription_renewal( $order_id ) {
@@ -94,7 +95,7 @@ class GMP_Renewal {
 		return $passed;
 	}
 
-	public static function show_extension_button( $subscription ) {
+	public static function inject_extension_button_action( $actions, $subscription ) {
     $user_id = get_current_user_id();
     $product_id = null;
     $variation_id = null;
@@ -106,32 +107,33 @@ class GMP_Renewal {
     }
 
     if ( ! $product_id || ! has_term( 'gmp-plan', 'product_cat', $product_id ) ) {
-        return;
+        return $actions;
     }
 
-    // Get number of extension months
     $settings      = get_option( 'gmp_interest_settings', [] );
     $ext_interest  = $settings[ $product_id ]['ext'] ?? [];
     $ext_limit     = count( $ext_interest );
 
-    // Fetch original variation product to get billing length (EMI count)
     $product = wc_get_product( $variation_id );
     $base_length = method_exists( $product, 'get_length' ) ? intval( $product->get_length() ) : 0;
 
-    // Count user's renewal history
     $history_key = "gmp_subscription_history_{$variation_id}";
     $history     = get_user_meta( $user_id, $history_key, true ) ?: [];
     $base_paid   = count( $history );
 
-    // Count used extensions
     $used_ext = intval( get_user_meta( $user_id, "_gmp_extension_used_{$subscription->get_id()}", true ) );
 
-    // Show button if base EMIs complete and extensions remaining
     if ( $base_length > 0 && $base_paid >= $base_length && $used_ext < $ext_limit ) {
         $checkout_url = wc_get_checkout_url() . '?gmp_extension=' . $subscription->get_id();
-        echo '<p><a class="button alt" href="' . esc_url( $checkout_url ) . '">Pay Extension EMI</a></p>';
+        $actions['gmp_extension'] = [
+            'url'  => esc_url( $checkout_url ),
+            'name' => __( 'Pay Extension EMI', 'gold-money-plan' ),
+        ];
     }
+
+    return $actions;
 }
+
 
 
 	public static function get_total_renewals( $user_id, $variation_id ) {
