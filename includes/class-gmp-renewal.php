@@ -127,7 +127,7 @@ public static function maybe_add_extension_to_cart() {
 		return;
 	}
 
-	// Check if subscription has GMP plan product
+	// Check if GMP plan exists in subscription
 	$has_gmp = false;
 	foreach ( $subscription->get_items() as $item ) {
 		$product_id = $item->get_product_id();
@@ -140,27 +140,30 @@ public static function maybe_add_extension_to_cart() {
 		return;
 	}
 
-	// Create a renewal order (this auto links it to subscription)
+	// Create a renewal order manually
 	$renewal_order = wcs_create_renewal_order( $subscription );
 
 	if ( ! $renewal_order ) {
 		return;
 	}
 
-	// Optional: update total if extension interest needs to be added
-	// Example: add ₹50 to each item
+	// Force it to be payable
+	$renewal_order->set_requires_payment( true );
+	$renewal_order->set_status( 'pending' );
+
+	// Optionally add extra interest here
 	foreach ( $renewal_order->get_items() as $item ) {
-		$original_total = $item->get_total();
-		$item->set_total( $original_total + 50 ); // Adjust this interest as needed
+		$total = $item->get_total();
+		$item->set_total( $total + 50 ); // Flat ₹50 interest — replace with your logic
 	}
 	$renewal_order->calculate_totals();
 	$renewal_order->save();
 
-	// Redirect to payment page
-	$pay_url = $renewal_order->get_checkout_payment_url();
-	wp_safe_redirect( $pay_url );
+	// Redirect to pay page
+	wp_safe_redirect( $renewal_order->get_checkout_payment_url() );
 	exit;
 }
+
 
 
 
