@@ -135,10 +135,10 @@ add_action( 'wp_loaded', [ __CLASS__, 'maybe_add_extension_to_cart' ] );
 
 			// Clear cart and add renewal product
 			WC()->cart->empty_cart();
-			WC()->cart->add_to_cart( $product_id, 1, $variation_id, [], [
-				'subscription_renewal' => true,
-				'gmp_extension'        => true,
-			] );
+			if ( function_exists( 'wcs_add_renewal_order_to_cart' ) ) {
+    wcs_add_renewal_order_to_cart( $subscription );
+}
+
 
 			// Redirect to checkout
 			wp_safe_redirect( wc_get_checkout_url() );
