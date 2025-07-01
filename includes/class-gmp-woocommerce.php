@@ -288,7 +288,14 @@ public static function initialize_interest_schedule( $subscription, $order ) {
         }
 
         // Product/variation & per-unit price
-        $variation_id = $item->get_variation_id() ?: $item->get_product_id();
+        $variation_id = $item->get_variation_id();
+if ( ! $variation_id ) {
+    // maybe variation ID was not stored, try getting it from product object
+    $product = $item->get_product();
+    if ( $product && $product->is_type( 'variation' ) ) {
+        $variation_id = $product->get_id();
+    }
+}
         $product      = wc_get_product( $variation_id );
         $qty          = max( 1, $item->get_quantity() );
         $unit_price   = $item->get_total() / $qty;
@@ -302,7 +309,15 @@ public static function initialize_interest_schedule( $subscription, $order ) {
         // 3a) Original term length (lock period)
      $lock_days       = intval( get_post_meta( $variation_id, '_gmp_lock_period', true ) );
 $extension_days  = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
-
+error_log( print_r( [
+  'variation_id' => $variation_id,
+  'product_id'   => $item->get_product_id(),
+  'lock_days'    => $lock_days,
+  'extension'    => $extension_count,
+  'base_pct'     => $base_pct,
+  'ext_pcts'     => $ext_pcts,
+  'unit_price'   => $unit_price,
+], true ) );
         // 3b) How many extension days you allowed
         $extension_count = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
 
