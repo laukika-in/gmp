@@ -442,14 +442,17 @@ if ( empty( $history ) ) {
         $base_emi   = floatval( $entry['amount'] );
 
         // pick the right % rate
-        if ( $instalment <= $lock_period ) {
-            $pct = $base_pct;
-        } else {
-            $ext_index = $instalment - $lock_period;
-            $pct       = isset( $ext_pcts[ $ext_index ] )
-                       ? floatval( $ext_pcts[ $ext_index ] )
-                       : $base_pct;
-        }
+       if ( $instalment <= $lock_period ) {
+    $pct = $base_pct;
+} else {
+    // shift to zero‐based array (ext_pcts[0] is first extension day)
+    $zero_index = ( $instalment - $lock_period ) - 1;
+    if ( isset( $ext_pcts[ $zero_index ] ) ) {
+        $pct = floatval( $ext_pcts[ $zero_index ] );
+    } else {
+        $pct = $base_pct;
+    }
+}
 
         // compute amounts
         $interest   = round( $base_emi * ( $pct / 100 ), 2 );
