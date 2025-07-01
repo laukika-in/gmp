@@ -57,6 +57,12 @@ add_action(
     [ __CLASS__, 'snapshot_interest_on_renewal_payment_complete' ],
     10, 2
 );
+
+add_action(
+  'woocommerce_checkout_subscription_created',
+  [ __CLASS__, 'initialize_interest_schedule' ],
+  10, 2
+);
          
     }
 
@@ -206,68 +212,37 @@ add_action(
  */
  
 public static function store_interest_snapshot( $item, $cart_item_key, $values, $order ) {
-    $product_id = $item->get_product_id();
-    if ( ! has_term( 'gmp-plan', 'product_cat', $product_id ) ) {
+    if ( ! has_term( 'gmp-plan', 'product_cat', $item->get_product_id() ) ) {
         return;
     }
 
-    // 1) Fetch saved interest settings
-    $settings      = get_option( 'gmp_interest_settings', [] );
-    $interest_data = $settings[ $product_id ] ?? [ 'base' => 0, 'ext' => [] ];
-    $base_pct      = floatval( $interest_data['base'] );
-    $ext_pcts      = (array) $interest_data['ext'];
-
-    // Determine the actual subscription product (variation or parent)
-    $variation_id      = $item->get_variation_id() ?: $product_id;
-    $subscription_prod = wc_get_product( $variation_id );
-
-    // 2) Correctly get the lock-period length
-  $total_instalments = method_exists( $subscription_prod, 'get_length' )
-    ? intval( $subscription_prod->get_length() )
-    : intval( $subscription_prod->get_meta( '_subscription_length', true ) );
-
-// Determine total instalments (Stop renewing after)
-if ( method_exists( $subscription_prod, 'get_length' ) ) {
-    $total_instalments = intval( $subscription_prod->get_length() );
-} else {
-    $total_instalments = intval( $subscription_prod->get_meta( '_subscription_length', true ) );
-}
-
-// How many extension days you allowed
-$extension_count   = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
-
-// Lock-period = total minus extension
-$lock_period       = max( 0, $total_instalments - $extension_count );
-
-    // 4) Count how many payments have already been made
-    $user_id           = $order->get_user_id() ?: get_current_user_id();
-    $history_key       = "gmp_subscription_history_{$variation_id}";
-    $history           = get_user_meta( $user_id, $history_key, true );
-    $paid_count        = is_array( $history ) ? count( $history ) : 0;
+    // 1) Figure out which instalment number this is
+    $variation_id = $item->get_variation_id() ?: $item->get_product_id();
+    $subscription = wcs_get_subscriptions_for_order( $order )[0] ?? null;
+    if ( ! $subscription ) {
+        return;
+    }
+    // Count parent‐related orders to date
+    $paid_count        = count( $subscription->get_related_orders( ['parent'] ) );
     $instalment_number = $paid_count + 1;
 
-    // 5) Pick the correct rate
-  $instalment_number = $paid_count + 1;
+    // 2) Fetch the precomputed schedule
+    $schedule = $subscription->get_meta( '_gmp_interest_schedule', true );
+    if ( empty( $schedule[ $instalment_number ] ) ) {
+        // fallback to zero if missing
+        $pct = 0;
+        $amt = 0;
+    } else {
+        $pct = floatval( $schedule[ $instalment_number ]['percent'] );
+        $amt = floatval( $schedule[ $instalment_number ]['amount'] );
+    }
 
-if ( $instalment_number <= $lock_period ) {
-    $apply_pct = $base_pct;
-} else {
-    $ext_index = $instalment_number - $lock_period;
-    $apply_pct = isset( $ext_pcts[ $ext_index ] )
-               ? floatval( $ext_pcts[ $ext_index ] )
-               : $base_pct;
+    // 3) Save to the line item
+    $item->add_meta_data( '_gmp_interest_percent',    $pct, true );
+    $item->add_meta_data( '_gmp_interest_amount',     $amt, true );
+    $item->add_meta_data( '_gmp_instalment_number',   $instalment_number, true );
 }
 
-    // 6) Compute unit EMI & interest amount
-    $qty        = max( 1, $item->get_quantity() );
-    $unit_price = $item->get_total() / $qty;
-    $int_amt    = round( $unit_price * ( $apply_pct / 100 ), 2 );
-
-    // 7) Snapshot it
-    $item->add_meta_data( '_gmp_interest_percent',  $apply_pct, true );
-    $item->add_meta_data( '_gmp_interest_amount',   $int_amt,   true );
-    $item->add_meta_data( '_gmp_instalment_number', $instalment_number, true );
-}
 public static function snapshot_interest_on_scheduled_renewal( $renewal_order, $subscription ) {
     foreach ( $renewal_order->get_items() as $item ) {
         // Only snapshot for GMP Plans
@@ -282,12 +257,54 @@ public static function snapshot_interest_on_scheduled_renewal( $renewal_order, $
 public static function snapshot_interest_on_renewal_payment_complete( $subscription, $renewal_order ) {
     foreach ( $renewal_order->get_items() as $item ) {
         if ( has_term( 'gmp-plan', 'product_cat', $item->get_product_id() ) ) {
-            // reuse your store_interest_snapshot logic:
             self::store_interest_snapshot( $item, null, null, $renewal_order );
         }
     }
-    // save the order so new meta is persisted
     $renewal_order->save();
+}
+
+
+public static function initialize_interest_schedule( $subscription, $order ) {
+    // 1) Locate the GMP line item from the initial order
+    foreach ( $order->get_items() as $item ) {
+        if ( has_term( 'gmp-plan', 'product_cat', $item->get_product_id() ) ) {
+            $variation_id = $item->get_variation_id() ?: $item->get_product_id();
+            $product      = wc_get_product( $variation_id );
+            $qty          = max(1, $item->get_quantity());
+            $unit_price   = $item->get_total() / $qty;
+
+            // 2) Fetch rates + counts
+            $settings    = get_option( 'gmp_interest_settings', [] );
+            $data        = $settings[ $item->get_product_id() ] ?? [ 'base'=>0, 'ext'=>[] ];
+            $base_pct    = floatval( $data['base'] );
+            $ext_pcts    = (array) $data['ext'];
+
+            $total       = $product->get_length(); // e.g. 6 days
+            $extension   = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
+            $lock_period = max(0, $total - $extension);
+
+            // 3) Build the schedule
+            $schedule = [];
+            for ( $i = 1; $i <= $total; $i++ ) {
+                if ( $i <= $lock_period ) {
+                    $pct = $base_pct;
+                } else {
+                    $idx = $i - $lock_period;
+                    $pct = $ext_pcts[ $idx ] ?? $base_pct;
+                }
+                $amt = round( $unit_price * ( $pct / 100 ), 2 );
+                $schedule[ $i ] = [
+                    'percent' => $pct,
+                    'amount'  => $amt,
+                ];
+            }
+
+            // 4) Persist on the subscription
+            $subscription->update_meta_data( '_gmp_interest_schedule', $schedule );
+            $subscription->save();
+            break;
+        }
+    }
 }
      /**
      * Fired on the admin order page.
