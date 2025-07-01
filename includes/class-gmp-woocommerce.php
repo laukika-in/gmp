@@ -377,28 +377,30 @@ public static function initialize_interest_schedule( $subscription, $order ) {
         self::output_interest_table( $subscription );
     }
 
+/**
+ * Loops every GMP line‐item across the parent + renewals,
+ * in date order, and calculates the correct rate per instalment.
+ */
 protected static function output_interest_table( $subscription ) {
+    // 1) Load all interest settings once
     $all_settings = get_option( 'gmp_interest_settings', [] );
 
-    // Build chronological list of parent + renewals
-    $order_ids = [];
-    if ( $pid = $subscription->get_parent_id() ) {
-        $order_ids[] = $pid;
-    }
-    $renewals = $subscription->get_related_orders( ['renewal'] );
-    if ( is_array( $renewals ) ) {
-        $order_ids = array_merge( $order_ids, $renewals );
-    }
-    if ( empty( $order_ids ) ) {
+    // 2) Fetch BOTH the initial order ("parent") and all "renewal" orders
+    $order_ids = $subscription->get_related_orders( ['parent','renewal'] );
+    if ( empty( $order_ids ) || ! is_array( $order_ids ) ) {
         echo '<p>No EMI records found.</p>';
         return;
     }
-    // Sort by date
+
+    // 3) Sort them by creation date ascending
     usort( $order_ids, function( $a, $b ) {
         $o1 = wc_get_order( $a );
         $o2 = wc_get_order( $b );
-        if ( ! $o1 || ! $o2 ) return 0;
-        return $o1->get_date_created()->getTimestamp() <=> $o2->get_date_created()->getTimestamp();
+        if ( ! $o1 || ! $o2 ) {
+            return 0;
+        }
+        return $o1->get_date_created()->getTimestamp()
+             <=> $o2->get_date_created()->getTimestamp();
     });
 
     echo '<table class="shop_table shop_table_responsive"><thead><tr>';
@@ -408,53 +410,55 @@ protected static function output_interest_table( $subscription ) {
 
     $instalment = 0;
 
+    // 4) Walk each order in date order…
     foreach ( $order_ids as $order_id ) {
         $order = wc_get_order( $order_id );
-        if ( ! $order ) continue;
+        if ( ! $order ) {
+            continue;
+        }
 
+        // …and each GMP line-item within it
         foreach ( $order->get_items() as $item ) {
             if ( ! has_term( 'gmp-plan', 'product_cat', $item->get_product_id() ) ) {
                 continue;
             }
 
-            // unit price & quantity
+            // Per-unit price & how many units were paid at once
+            $unit_price = $item->get_total() / max( 1, $item->get_quantity() );
             $qty        = max( 1, $item->get_quantity() );
-            $unit_price = $item->get_total() / $qty;
 
-            // interest settings
-            $prod_id   = $item->get_product_id();
-            $settings  = $all_settings[ $prod_id ] ?? [ 'base'=>0, 'ext'=>[] ];
-            $base_pct  = floatval( $settings['base'] );
-            $ext_pcts  = is_array( $settings['ext'] ) ? $settings['ext'] : [];
+            // Pull your base + extension % settings for this product
+            $prod_id  = $item->get_product_id();
+            $cfg      = $all_settings[ $prod_id ] ?? [ 'base'=>0, 'ext'=>[] ];
+            $base_pct = floatval( $cfg['base'] );
+            $ext_pcts = is_array( $cfg['ext'] ) ? $cfg['ext'] : [];
 
-            // lock vs extension split
-            $variation_id = $item->get_variation_id() ?: $prod_id;
-            $product      = wc_get_product( $variation_id );
-            $total_instalments = method_exists( $product, 'get_length' )
-                ? intval( $product->get_length() )
-                : intval( $product->get_meta( '_subscription_length', true ) );
+            // Determine how many are lock vs extension
+            $variation_id      = $item->get_variation_id() ?: $prod_id;
+            $product           = wc_get_product( $variation_id );
+            $lock_days         = method_exists( $product, 'get_length' )
+                                ? intval( $product->get_length() )
+                                : intval( $product->get_meta( '_subscription_length', true ) );
             $extension_count   = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
-            $lock_period       = max( 0, $total_instalments - $extension_count );
+            $lock_period       = $lock_days;
 
-            // now loop *per unit* in this item
+            // Now expand each “unit” as its own instalment
             for ( $i = 0; $i < $qty; $i++ ) {
                 $instalment++;
 
-                // pick rate
+                // Pick the correct %: base for 1→lock_period, else extension[#]
                 if ( $instalment <= $lock_period ) {
                     $pct = $base_pct;
                 } else {
                     $idx = $instalment - $lock_period;
-                    $pct = isset( $ext_pcts[ $idx ] )
-                        ? floatval( $ext_pcts[ $idx ] )
-                        : $base_pct;
+                    $pct = $ext_pcts[ $idx ] ?? $base_pct;
                 }
 
-                // amounts
+                // Compute amounts
                 $interest = round( $unit_price * ( $pct / 100 ), 2 );
                 $total    = $unit_price + $interest;
 
-                // output a row
+                // Render a row
                 echo '<tr>';
                 echo '<td>' . esc_html( $instalment ) . '</td>';
                 echo '<td><a href="' . esc_url( get_edit_post_link( $order_id ) ) . '">#'
