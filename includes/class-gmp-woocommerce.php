@@ -313,20 +313,22 @@ $extension_days  = intval( get_post_meta( $variation_id, '_gmp_extension_months'
        $total_periods   = $lock_days + $extension_days;
 
         // 4) Build out instalments 1…(lock_days+extension_count)
-        $schedule = [];
-        for ( $i = 1; $i <= $total_instalments; $i++ ) {
-            if ( $instalment <= $lock_days ) {
-            $pct = $base_pct;
-        } else {
-            $ext_idx = $instalment - $lock_days;      // 1…$extension_days
-            $pct     = $ext_pcts[ $ext_idx ] ?? $base_pct;
-        }
-            $amt = round( $unit_price * ( $pct / 100 ), 2 );
-            $schedule[ $i ] = [
-                'percent' => $pct,
-                'amount'  => $amt,
-            ];
-        }
+       $schedule = [];
+for ( $i = 1; $i <= $total_instalments; $i++ ) {
+    if ( $i <= $lock_days ) {
+        $pct = $base_pct;
+    } else {
+        $ext_index = ( $i - $lock_days ) - 1; // zero-based
+        $pct       = isset( $ext_pcts[ $ext_index ] )
+                   ? floatval( $ext_pcts[ $ext_index ] )
+                   : $base_pct;
+    }
+    $amt = round( $unit_price * ( $pct / 100 ), 2 );
+    $schedule[ $i ] = [
+        'percent' => $pct,
+        'amount'  => $amt,
+    ];
+}
 
         // 5) Save it on the subscription
         $subscription->update_meta_data( '_gmp_interest_schedule', $schedule );
