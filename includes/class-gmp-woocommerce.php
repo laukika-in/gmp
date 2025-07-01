@@ -52,7 +52,11 @@ add_action(
         // Product Extension Fields
         add_action('woocommerce_product_options_general_product_data', ['GMP_Product_Fields', 'add']);
         add_action('woocommerce_process_product_meta', ['GMP_Product_Fields', 'save']);
-
+add_action(
+    'woocommerce_subscription_renewal_payment_complete',
+    [ __CLASS__, 'snapshot_interest_on_renewal_payment_complete' ],
+    10, 2
+);
          
     }
 
@@ -222,7 +226,14 @@ public static function store_interest_snapshot( $item, $cart_item_key, $values, 
     ? intval( $subscription_prod->get_length() )
     : intval( $subscription_prod->get_meta( '_subscription_length', true ) );
 
-// How many extension instalments you allowed (stored in _gmp_extension_months)
+// Determine total instalments (Stop renewing after)
+if ( method_exists( $subscription_prod, 'get_length' ) ) {
+    $total_instalments = intval( $subscription_prod->get_length() );
+} else {
+    $total_instalments = intval( $subscription_prod->get_meta( '_subscription_length', true ) );
+}
+
+// How many extension days you allowed
 $extension_count   = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
 
 // Lock-period = total minus extension
@@ -236,18 +247,16 @@ $lock_period       = max( 0, $total_instalments - $extension_count );
     $instalment_number = $paid_count + 1;
 
     // 5) Pick the correct rate
-    if ( $instalment_number <= $lock_period ) {
-        // lock-period instalment
-        $apply_pct = $base_pct;
-    } else {
-        // extension-period instalment
-        $ext_index = $instalment_number - $lock_period;
-        if ( isset( $ext_pcts[ $ext_index ] ) && $ext_index <= $extension_count ) {
-            $apply_pct = floatval( $ext_pcts[ $ext_index ] );
-        } else {
-            $apply_pct = $base_pct;
-        }
-    }
+  $instalment_number = $paid_count + 1;
+
+if ( $instalment_number <= $lock_period ) {
+    $apply_pct = $base_pct;
+} else {
+    $ext_index = $instalment_number - $lock_period;
+    $apply_pct = isset( $ext_pcts[ $ext_index ] )
+               ? floatval( $ext_pcts[ $ext_index ] )
+               : $base_pct;
+}
 
     // 6) Compute unit EMI & interest amount
     $qty        = max( 1, $item->get_quantity() );
@@ -268,6 +277,16 @@ public static function snapshot_interest_on_scheduled_renewal( $renewal_order, $
         }
     }
     // Persist the new meta data
+    $renewal_order->save();
+}
+public static function snapshot_interest_on_renewal_payment_complete( $subscription, $renewal_order ) {
+    foreach ( $renewal_order->get_items() as $item ) {
+        if ( has_term( 'gmp-plan', 'product_cat', $item->get_product_id() ) ) {
+            // reuse your store_interest_snapshot logic:
+            self::store_interest_snapshot( $item, null, null, $renewal_order );
+        }
+    }
+    // save the order so new meta is persisted
     $renewal_order->save();
 }
      /**
