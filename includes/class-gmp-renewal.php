@@ -114,37 +114,39 @@ add_action( 'wp_loaded', [ __CLASS__, 'maybe_add_extension_to_cart' ] );
 		}
 	}
 
-	public static function maybe_add_extension_to_cart() {
-		if ( ! is_user_logged_in() || empty( $_GET['gmp_extension'] ) || is_admin() || is_cart() || is_checkout() ) {
-			return;
+public static function maybe_add_extension_to_cart() {
+	if ( ! is_user_logged_in() || empty( $_GET['gmp_extension'] ) || is_admin() || is_cart() || is_checkout() ) {
+		return;
+	}
+
+	$sub_id = absint( $_GET['gmp_extension'] );
+	$subscription = wcs_get_subscription( $sub_id );
+	if ( ! $subscription || $subscription->get_user_id() !== get_current_user_id() ) {
+		return;
+	}
+
+	foreach ( $subscription->get_items() as $item ) {
+		$product_id   = $item->get_product_id();
+		$variation_id = $item->get_variation_id() ?: $product_id;
+
+		if ( ! has_term( 'gmp-plan', 'product_cat', $product_id ) ) {
+			continue;
 		}
 
-		$sub_id = absint( $_GET['gmp_extension'] );
-		$subscription = wcs_get_subscription( $sub_id );
-		if ( ! $subscription || $subscription->get_user_id() !== get_current_user_id() ) {
-			return;
-		}
+		// Remove existing cart contents
+		WC()->cart->empty_cart();
 
-		foreach ( $subscription->get_items() as $item ) {
-			$product_id   = $item->get_product_id();
-			$variation_id = $item->get_variation_id();
+		// Add variation product manually as a renewal
+		WC()->cart->add_to_cart( $product_id, 1, $variation_id, [], [
+			'subscription_renewal' => true,
+			'gmp_extension'        => true,
+		] );
 
-			if ( ! $variation_id || ! has_term( 'gmp-plan', 'product_cat', $product_id ) ) {
-				continue;
-			}
-
-			// Clear cart and add renewal product
-			WC()->cart->empty_cart();
-			if ( function_exists( 'wcs_add_renewal_order_to_cart' ) ) {
-    wcs_add_renewal_order_to_cart( $subscription );
+		wp_safe_redirect( wc_get_checkout_url() );
+		exit;
+	}
 }
 
-
-			// Redirect to checkout
-			wp_safe_redirect( wc_get_checkout_url() );
-			exit;
-		}
-	}
 
 
 	public static function get_total_renewals( $user_id, $variation_id ) {
