@@ -55,7 +55,8 @@ add_action(
 add_action(
     'woocommerce_subscription_renewal_payment_complete',
     [ __CLASS__, 'snapshot_interest_on_renewal_payment_complete' ],
-    10, 2
+    10,
+    1
 );
 
 add_action(
@@ -254,12 +255,27 @@ public static function snapshot_interest_on_scheduled_renewal( $renewal_order, $
     // Persist the new meta data
     $renewal_order->save();
 }
-public static function snapshot_interest_on_renewal_payment_complete( $subscription, $renewal_order ) {
+public static function snapshot_interest_on_renewal_payment_complete( $renewal_order_id ) {
+    $renewal_order = wc_get_order( $renewal_order_id );
+    if ( ! $renewal_order instanceof WC_Order ) {
+        return;
+    }
+
+    // Find the parent subscription (there should be exactly one)
+    $subscriptions = wcs_get_subscriptions_for_order( $renewal_order_id );
+    if ( empty( $subscriptions ) ) {
+        return;
+    }
+    $subscription = reset( $subscriptions );
+
+    // Loop each line item and re-run your snapshot logic
     foreach ( $renewal_order->get_items() as $item ) {
         if ( has_term( 'gmp-plan', 'product_cat', $item->get_product_id() ) ) {
             self::store_interest_snapshot( $item, null, null, $renewal_order );
         }
     }
+
+    // Persist the meta you just added
     $renewal_order->save();
 }
 
