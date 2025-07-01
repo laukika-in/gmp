@@ -218,14 +218,15 @@ public static function store_interest_snapshot( $item, $cart_item_key, $values, 
     $subscription_prod = wc_get_product( $variation_id );
 
     // 2) Correctly get the lock-period length
-    if ( method_exists( $subscription_prod, 'get_length' ) ) {
-        $lock_period = intval( $subscription_prod->get_length() );
-    } else {
-        $lock_period = intval( $subscription_prod->get_meta( '_subscription_length', true ) );
-    }
+  $total_instalments = method_exists( $subscription_prod, 'get_length' )
+    ? intval( $subscription_prod->get_length() )
+    : intval( $subscription_prod->get_meta( '_subscription_length', true ) );
 
-    // 3) How many extension instalments you allowed?
-    $extension_count = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
+// How many extension instalments you allowed (stored in _gmp_extension_months)
+$extension_count   = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
+
+// Lock-period = total minus extension
+$lock_period       = max( 0, $total_instalments - $extension_count );
 
     // 4) Count how many payments have already been made
     $user_id           = $order->get_user_id() ?: get_current_user_id();
@@ -259,12 +260,15 @@ public static function store_interest_snapshot( $item, $cart_item_key, $values, 
     $item->add_meta_data( '_gmp_instalment_number', $instalment_number, true );
 }
 public static function snapshot_interest_on_scheduled_renewal( $renewal_order, $subscription ) {
-  foreach ( $renewal_order->get_items() as $item ) {
-    // re-use your existing logic
-    self::store_interest_snapshot( $item, null, null, $renewal_order );
-  }
-  // make sure the meta gets saved
-  $renewal_order->save();
+    foreach ( $renewal_order->get_items() as $item ) {
+        // Only snapshot for GMP Plans
+        if ( has_term( 'gmp-plan', 'product_cat', $item->get_product_id() ) ) {
+            // Re-use your logic: (cart_item_key & $values not needed here)
+            self::store_interest_snapshot( $item, null, null, $renewal_order );
+        }
+    }
+    // Persist the new meta data
+    $renewal_order->save();
 }
      /**
      * Fired on the admin order page.
