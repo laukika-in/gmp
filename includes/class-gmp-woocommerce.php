@@ -300,8 +300,8 @@ public static function initialize_interest_schedule( $subscription, $order ) {
         $ext_pcts   = is_array( $data['ext'] ) ? $data['ext'] : [];
 
         // 3a) Original term length (lock period)
-      $lock_days         = max( 0, $total_instalments - $extension_count );
-
+     $lock_days       = intval( get_post_meta( $variation_id, '_gmp_lock_period', true ) );
+$extension_days  = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
 
         // 3b) How many extension days you allowed
         $extension_count = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
@@ -310,21 +310,17 @@ public static function initialize_interest_schedule( $subscription, $order ) {
         $total_instalments = $lock_days + $extension_count;
 
         // 3d) Lock-period remains the original term
-        $lock_period = $lock_days;
+       $total_periods   = $lock_days + $extension_days;
 
         // 4) Build out instalments 1…(lock_days+extension_count)
         $schedule = [];
         for ( $i = 1; $i <= $total_instalments; $i++ ) {
-            if ( $i <= $lock_period ) {
-                // Within lock: base rate
-                $pct = $base_pct;
-            } else {
-                // Extension slot: 1-based index into your ext[] array
-                $ext_index = $i - $lock_period;
-                $pct       = isset( $ext_pcts[ $ext_index ] )
-                           ? floatval( $ext_pcts[ $ext_index ] )
-                           : $base_pct;
-            }
+            if ( $instalment <= $lock_days ) {
+            $pct = $base_pct;
+        } else {
+            $ext_idx = $instalment - $lock_days;      // 1…$extension_days
+            $pct     = $ext_pcts[ $ext_idx ] ?? $base_pct;
+        }
             $amt = round( $unit_price * ( $pct / 100 ), 2 );
             $schedule[ $i ] = [
                 'percent' => $pct,
