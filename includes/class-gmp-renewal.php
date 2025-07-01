@@ -140,32 +140,27 @@ public static function maybe_add_extension_to_cart() {
 		return;
 	}
 
-	// Create a renewal order manually
+	// Create a manual renewal order
 	$renewal_order = wcs_create_renewal_order( $subscription );
-
 	if ( ! $renewal_order ) {
 		return;
 	}
 
-	// Force it to be payable
-	$renewal_order->set_requires_payment( true );
-	$renewal_order->set_status( 'pending' );
+	// Set status to pending for manual payment
+	$renewal_order->update_status( 'pending' );
 
-	// Optionally add extra interest here
+	// Add ₹50 interest or any custom fee
 	foreach ( $renewal_order->get_items() as $item ) {
 		$total = $item->get_total();
-		$item->set_total( $total + 50 ); // Flat ₹50 interest — replace with your logic
+		$item->set_total( $total + 50 ); // You can replace with dynamic logic
 	}
 	$renewal_order->calculate_totals();
 	$renewal_order->save();
 
-	// Redirect to pay page
+	// Redirect to payment page
 	wp_safe_redirect( $renewal_order->get_checkout_payment_url() );
 	exit;
 }
-
-
-
 
 
 	public static function get_total_renewals( $user_id, $variation_id ) {
