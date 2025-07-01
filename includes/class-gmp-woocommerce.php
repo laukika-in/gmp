@@ -433,6 +433,12 @@ if ( empty( $history ) ) {
     echo '<th>Instalment</th><th>Order</th><th>Date</th><th>Product</th>';
     echo '<th>Base EMI</th><th>Interest %</th><th>Total</th>';
     echo '</tr></thead><tbody>';
+error_log( print_r( [
+  'variation_id' => $variation_id,
+  'base_pct'     => $base_pct,
+  'ext_pcts'     => $ext_pcts,
+  'lock_period'  => $lock_period
+], true ) );
 
     // 5) Loop history entries in order
     foreach ( $history as $idx => $entry ) {
