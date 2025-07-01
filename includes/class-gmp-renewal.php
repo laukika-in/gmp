@@ -14,62 +14,10 @@ class GMP_Renewal {
 
 		// 3) Prevent adding a duplicate active subscription to the cart
 		add_filter( 'woocommerce_add_to_cart_validation', [ __CLASS__, 'prevent_duplicate_subscription' ], 20, 6 ); 
-		
-		add_filter( 'wcs_view_subscription_actions', [ __CLASS__, 'maybe_add_extension_renew_action' ], 20, 2 );
 
 	}
 
- public static function maybe_add_extension_renew_action( $actions, $subscription ) {
-    if ( ! is_user_logged_in() ) {
-      return $actions;
-    }
-
-    // assume one line item per subscription
-    $items = $subscription->get_items();
-    if ( empty( $items ) ) {
-      return $actions;
-    }
-    $item = reset( $items );
-
-    // find the variation/product and its lock + extension counts
-    $variation_id = $item->get_variation_id() ?: $item->get_product_id();
-    $product      = wc_get_product( $variation_id );
-    if ( ! $product ) {
-      return $actions;
-    }
-
-    $lock_count = intval( $product->get_meta( '_subscription_length' ) );
-    $ext_count  = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
-    if ( $lock_count <= 0 || $ext_count <= 0 ) {
-      return $actions;
-    }
-
-    $paid_count = self::get_total_renewals( get_current_user_id(), $variation_id );
-
-    // Are we in the “extension window”?
-    if ( $paid_count >= $lock_count && $paid_count < ( $lock_count + $ext_count ) ) {
-
-      if ( $subscription->has_status( 'active' ) ) {
-
-        // core early-renewal flow
-        $actions['subscription_renewal_early'] = [
-          'url'  => wcs_get_early_renewal_url( $subscription ),
-          'name' => __( 'Renew now', 'gold-money-plan' ),
-        ];
-
-      } elseif ( $subscription->has_status( 'expired' ) ) {
-
-        // resubscribe (creates a new renewal order for an expired subscription)
-        $actions['subscription_resubscribe'] = [
-          'url'  => wcs_get_resubscribe_url( $subscription ),
-          'name' => __( 'Extend now', 'gold-money-plan' ),
-        ];
-
-      }
-    }
-
-    return $actions;
-  }
+ 
 
 	public static function record_subscription_renewal( $order_id ) {
 		$order = wc_get_order( $order_id );

@@ -204,46 +204,62 @@ public static function store_interest_snapshot( $item, $cart_item_key, $values, 
         return;
     }
 
-    // 1) Fetch your saved interest settings:
+    // 1) Fetch saved interest settings
     $settings      = get_option( 'gmp_interest_settings', [] );
     $interest_data = isset( $settings[ $product_id ] )
                    ? $settings[ $product_id ]
-                   : [ 'base' => 0, 'ext' => [] ];
+                   : [ 'base' => 0, 'ext'  => [] ];
     $base_pct      = floatval( $interest_data['base'] );
     $ext_pcts      = is_array( $interest_data['ext'] ) ? $interest_data['ext'] : [];
 
-    // 2) Get the product's lock period & extension months from its meta:
-    $lock_period     = intval( get_post_meta( $product_id, '_gmp_lock_period', true ) );
-    $extension_months = intval( get_post_meta( $product_id, '_gmp_extension_months', true ) );
+    // --- NEW LOGIC START ---
 
-    // 3) Count how many payments this user has already made for this product:
-    $user_id      = $order->get_user_id() ?: get_current_user_id();
-    $history_key  = "gmp_subscription_history_{$product_id}";
-    $history      = get_user_meta( $user_id, $history_key, true );
-    $paid_count   = is_array( $history ) ? count( $history ) : 0;
-    // Note: this count is *before* today’s renewal, so 
-    // month_number = $paid_count + 1
+    // Determine the actual subscription product (variation or parent)
+    $variation_id      = $item->get_variation_id() ?: $product_id;
+    $subscription_prod = wc_get_product( $variation_id );
 
-    $month_number = $paid_count + 1;
-    $apply_pct    = $base_pct;
+    // 2) Read the lock-period from the subscription length (e.g. 4 days)
+    $lock_period       = intval( $subscription_prod->get_meta( '_subscription_length', true ) );
 
-    // 4) If we've gone beyond the lock period, apply extension %
-    if ( $lock_period > 0 && $month_number > $lock_period ) {
-        $ext_index = $month_number - $lock_period; 
-        // only if within the configured extension window
-        if ( $ext_index >= 1 && $ext_index <= $extension_months && isset( $ext_pcts[ $ext_index ] ) ) {
+    // 3) Read how many extension instalments you allowed (still stored in months meta)
+    $extension_count   = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
+
+    // 4) Count how many instalments have already been paid
+    $user_id           = $order->get_user_id() ?: get_current_user_id();
+    $history_key       = "gmp_subscription_history_{$variation_id}";
+    $history           = get_user_meta( $user_id, $history_key, true );
+    $paid_count        = is_array( $history ) ? count( $history ) : 0;
+
+    // This instalment number is paid_count + 1
+    $instalment_number = $paid_count + 1;
+
+    // 5) Pick the rate: base for 1→lock_period, else extension
+    if ( $instalment_number <= $lock_period ) {
+        $apply_pct = $base_pct;
+    } else {
+        $ext_index = $instalment_number - $lock_period; 
+        if ( $ext_index >= 1 
+          && $ext_index <= $extension_count 
+          && isset( $ext_pcts[ $ext_index ] ) 
+        ) {
             $apply_pct = floatval( $ext_pcts[ $ext_index ] );
+        } else {
+            // fallback to base if you haven’t configured that extension slot
+            $apply_pct = $base_pct;
         }
     }
 
-    // 5) Compute per-unit EMI & interest amount
+    // --- NEW LOGIC END ---
+
+    // 6) Compute unit EMI & interest amount
     $qty        = max( 1, $item->get_quantity() );
     $unit_price = $item->get_total() / $qty;
     $int_amt    = round( $unit_price * ( $apply_pct / 100 ), 2 );
 
-    // 6) Store both percentage and amount on the line item
-    $item->add_meta_data( '_gmp_interest_percent', $apply_pct, true );
-    $item->add_meta_data( '_gmp_interest_amount',  $int_amt,    true );
+    // 7) Store it on the line item
+    $item->add_meta_data( '_gmp_interest_percent',    $apply_pct, true );
+    $item->add_meta_data( '_gmp_interest_amount',     $int_amt,   true );
+    $item->add_meta_data( '_gmp_instalment_number',   $instalment_number, true );
 }
 
 
