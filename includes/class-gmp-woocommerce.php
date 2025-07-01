@@ -377,17 +377,10 @@ public static function initialize_interest_schedule( $subscription, $order ) {
         self::output_interest_table( $subscription );
     }
 
-/**
- * Loops through every GMP line-item across
- * the parent + renewal orders in date order,
- * assigns inst# per item, picks the base vs extension
- * rate, and renders the table.
- */
 protected static function output_interest_table( $subscription ) {
-    // 1) Load your interest settings once
     $all_settings = get_option( 'gmp_interest_settings', [] );
 
-    // 2) Build a list of [ parent, renewal, renewal, … ]
+    // Build chronological list of parent + renewals
     $order_ids = [];
     if ( $pid = $subscription->get_parent_id() ) {
         $order_ids[] = $pid;
@@ -396,22 +389,16 @@ protected static function output_interest_table( $subscription ) {
     if ( is_array( $renewals ) ) {
         $order_ids = array_merge( $order_ids, $renewals );
     }
-
     if ( empty( $order_ids ) ) {
         echo '<p>No EMI records found.</p>';
         return;
     }
-
-    // 3) Sort those orders by creation date ascending
+    // Sort by date
     usort( $order_ids, function( $a, $b ) {
         $o1 = wc_get_order( $a );
         $o2 = wc_get_order( $b );
-        if ( ! $o1 || ! $o2 ) {
-            return 0;
-        }
-        $t1 = $o1->get_date_created()->getTimestamp();
-        $t2 = $o2->get_date_created()->getTimestamp();
-        return $t1 <=> $t2;
+        if ( ! $o1 || ! $o2 ) return 0;
+        return $o1->get_date_created()->getTimestamp() <=> $o2->get_date_created()->getTimestamp();
     });
 
     echo '<table class="shop_table shop_table_responsive"><thead><tr>';
@@ -421,65 +408,64 @@ protected static function output_interest_table( $subscription ) {
 
     $instalment = 0;
 
-    // 4) Walk each order in date order…
     foreach ( $order_ids as $order_id ) {
         $order = wc_get_order( $order_id );
-        if ( ! $order ) {
-            continue;
-        }
+        if ( ! $order ) continue;
 
-        // …and each item in that order
         foreach ( $order->get_items() as $item ) {
             if ( ! has_term( 'gmp-plan', 'product_cat', $item->get_product_id() ) ) {
                 continue;
             }
 
-            $instalment++;
+            // unit price & quantity
+            $qty        = max( 1, $item->get_quantity() );
+            $unit_price = $item->get_total() / $qty;
 
-            // a) Base EMI
-            $qty      = max( 1, $item->get_quantity() );
-            $base_emi = $item->get_total() / $qty;
-
-            // b) Pull your settings for this product
+            // interest settings
             $prod_id   = $item->get_product_id();
             $settings  = $all_settings[ $prod_id ] ?? [ 'base'=>0, 'ext'=>[] ];
             $base_pct  = floatval( $settings['base'] );
             $ext_pcts  = is_array( $settings['ext'] ) ? $settings['ext'] : [];
 
-            // c) Figure out lock vs extension
-            $variation_id      = $item->get_variation_id() ?: $prod_id;
-            $product           = wc_get_product( $variation_id );
+            // lock vs extension split
+            $variation_id = $item->get_variation_id() ?: $prod_id;
+            $product      = wc_get_product( $variation_id );
             $total_instalments = method_exists( $product, 'get_length' )
                 ? intval( $product->get_length() )
                 : intval( $product->get_meta( '_subscription_length', true ) );
             $extension_count   = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
             $lock_period       = max( 0, $total_instalments - $extension_count );
 
-            // d) Pick your rate
-            if ( $instalment <= $lock_period ) {
-                $pct = $base_pct;
-            } else {
-                $idx = $instalment - $lock_period;
-                $pct = isset( $ext_pcts[ $idx ] )
-                    ? floatval( $ext_pcts[ $idx ] )
-                    : $base_pct;
+            // now loop *per unit* in this item
+            for ( $i = 0; $i < $qty; $i++ ) {
+                $instalment++;
+
+                // pick rate
+                if ( $instalment <= $lock_period ) {
+                    $pct = $base_pct;
+                } else {
+                    $idx = $instalment - $lock_period;
+                    $pct = isset( $ext_pcts[ $idx ] )
+                        ? floatval( $ext_pcts[ $idx ] )
+                        : $base_pct;
+                }
+
+                // amounts
+                $interest = round( $unit_price * ( $pct / 100 ), 2 );
+                $total    = $unit_price + $interest;
+
+                // output a row
+                echo '<tr>';
+                echo '<td>' . esc_html( $instalment ) . '</td>';
+                echo '<td><a href="' . esc_url( get_edit_post_link( $order_id ) ) . '">#'
+                     . esc_html( $order->get_order_number() ) . '</a></td>';
+                echo '<td>' . esc_html( $order->get_date_created()->date( 'Y-m-d' ) ) . '</td>';
+                echo '<td>' . esc_html( $item->get_name() ) . '</td>';
+                echo '<td>' . wc_price( $unit_price ) . '</td>';
+                echo '<td>' . number_format_i18n( $pct, 2 ) . '%</td>';
+                echo '<td>' . wc_price( $total ) . '</td>';
+                echo '</tr>';
             }
-
-            // e) Compute interest and total
-            $interest = round( $base_emi * ( $pct / 100 ), 2 );
-            $total    = $base_emi + $interest;
-
-            // f) Render the row
-            echo '<tr>';
-            echo '<td>' . esc_html( $instalment ) . '</td>';
-            echo '<td><a href="' . esc_url( get_edit_post_link( $order_id ) ) . '">#'
-                 . esc_html( $order->get_order_number() ) . '</a></td>';
-            echo '<td>' . esc_html( $order->get_date_created()->date( 'Y-m-d' ) ) . '</td>';
-            echo '<td>' . esc_html( $item->get_name() ) . '</td>';
-            echo '<td>' . wc_price( $base_emi ) . '</td>';
-            echo '<td>' . number_format_i18n( $pct, 2 ) . '%</td>';
-            echo '<td>' . wc_price( $total ) . '</td>';
-            echo '</tr>';
         }
     }
 
