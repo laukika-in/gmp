@@ -8,7 +8,7 @@ class GMP_Product_Fields {
     woocommerce_wp_checkbox([
       'id'          => '_gmp_enable_extension',
       'label'       => __('Enable Extension Period', 'gmp'),
-      'description' => __('Allow extra installments after lock-period end.', 'gmp'),
+      'description' => __('Allow extra instalments after lock-period end.', 'gmp'),
       'desc_tip'    => true,
     ]);
     woocommerce_wp_text_input([
@@ -23,7 +23,7 @@ class GMP_Product_Fields {
 
     // Tiny JS to show/hide extension-months field
     ?>
-    <script>
+ <script>
     jQuery(function($){
       function toggle() {
         var on = $('#_gmp_enable_extension').is(':checked');

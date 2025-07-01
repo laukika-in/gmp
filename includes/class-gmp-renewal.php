@@ -13,15 +13,65 @@ class GMP_Renewal {
 		add_action( 'woocommerce_checkout_order_processed', [ __CLASS__, 'record_extension_payment' ], 20, 1 );
 
 		// 3) Prevent adding a duplicate active subscription to the cart
-		add_filter( 'woocommerce_add_to_cart_validation', [ __CLASS__, 'prevent_duplicate_subscription' ], 20, 6 );
-
-		// 4) Show extension button on subscription detail page
-		add_action( 'wcs_subscription_details_table_after_dates', [ __CLASS__, 'show_extension_button' ] );
-
-add_action( 'wp_loaded', [ __CLASS__, 'maybe_add_extension_to_cart' ] );
-
+		add_filter( 'woocommerce_add_to_cart_validation', [ __CLASS__, 'prevent_duplicate_subscription' ], 20, 6 ); 
+    add_filter( 'wcs_view_subscription_actions', [ __CLASS__, 'maybe_add_extension_renew_action' ], 15, 2 );
 
 	}
+
+ public static function maybe_add_extension_renew_action( $actions, $subscription ) {
+    if ( ! is_user_logged_in() ) {
+      return $actions;
+    }
+
+    // Grab the first line item (assumes one product per subscription)
+    $items = $subscription->get_items();
+    if ( empty( $items ) ) {
+      return $actions;
+    }
+    $item = reset( $items );
+
+    // Determine which product/variation this is
+    $variation_id = $item->get_variation_id() ?: $item->get_product_id();
+    $product      = wc_get_product( $variation_id );
+    if ( ! $product ) {
+      return $actions;
+    }
+
+    // 1) Lock-period length: from the product’s “Subscription length” setting
+    $lock_count = intval( $product->get_meta( '_subscription_length' ) );
+    if ( $lock_count <= 0 ) {
+      // Infinite-length subscriptions shouldn’t use extension logic
+      return $actions;
+    }
+
+    // 2) Extension-instalments allowed (from your meta)
+    $ext_count = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
+    if ( $ext_count <= 0 ) {
+      return $actions; // no extension enabled
+    }
+
+    // 3) How many instalments the user has already paid?
+    $user_id    = get_current_user_id();
+    $paid_count = self::get_total_renewals( $user_id, $variation_id );
+
+    // Only show “Renew now” if:
+    //   – They’ve paid at least the lock-period instalments AND
+    //   – They haven’t yet exceeded lock + extension instalments
+    if ( $paid_count >= $lock_count && $paid_count < ( $lock_count + $ext_count ) ) {
+
+      // Build the early-renewal URL (same as WooCommerce Subscriptions uses)
+      $renew_url = wcs_get_renewal_url( $subscription->get_id() );
+
+      // Inject our button
+      $actions['gmp_renew_extension'] = [
+        'url'    => wp_nonce_url( $renew_url, 'renew_subscription', 'wc_renew_subscription_nonce' ),
+        'name'   => __( 'Renew now', 'gold-money-plan' ),
+        'action' => 'renew',  // CSS class “renew” for styling
+      ];
+    }
+
+    return $actions;
+  }
 
 	public static function record_subscription_renewal( $order_id ) {
 		$order = wc_get_order( $order_id );
@@ -97,71 +147,6 @@ add_action( 'wp_loaded', [ __CLASS__, 'maybe_add_extension_to_cart' ] );
 
 		return $passed;
 	}
-
-	public static function show_extension_button( $subscription ) {
-		$user_id = get_current_user_id();
-
-		foreach ( $subscription->get_items() as $item ) {
-			$product_id   = $item->get_product_id();
-			$variation_id = $item->get_variation_id() ?: $product_id;
-
-			// Show only for GMP Plan products
-			if ( has_term( 'gmp-plan', 'product_cat', $product_id ) ) {
-				$checkout_url = wc_get_checkout_url() . '?gmp_extension=' . $subscription->get_id();
-				echo '<p><a class="button alt" href="' . esc_url( wc_get_checkout_url() . '?gmp_extension=' . $subscription->get_id() ) . '">Pay Extension EMI</a></p>';
-
-				break; // Show button only once per subscription
-			}
-		}
-	}
-
-public static function maybe_add_extension_to_cart() {
-	if ( ! is_user_logged_in() || empty( $_GET['gmp_extension'] ) || is_admin() ) {
-		return;
-	}
-
-	$sub_id = absint( $_GET['gmp_extension'] );
-	$subscription = wcs_get_subscription( $sub_id );
-
-	if ( ! $subscription || $subscription->get_user_id() !== get_current_user_id() ) {
-		return;
-	}
-
-	// Check if GMP plan exists in subscription
-	$has_gmp = false;
-	foreach ( $subscription->get_items() as $item ) {
-		$product_id = $item->get_product_id();
-		if ( has_term( 'gmp-plan', 'product_cat', $product_id ) ) {
-			$has_gmp = true;
-			break;
-		}
-	}
-	if ( ! $has_gmp ) {
-		return;
-	}
-
-	// Create a manual renewal order
-	$renewal_order = wcs_create_renewal_order( $subscription );
-	if ( ! $renewal_order ) {
-		return;
-	}
-
-	// Set status to pending for manual payment
-	$renewal_order->update_status( 'pending' );
-
-	// Add ₹50 interest or any custom fee
-	foreach ( $renewal_order->get_items() as $item ) {
-		$total = $item->get_total();
-		$item->set_total( $total + 50 ); // You can replace with dynamic logic
-	}
-	$renewal_order->calculate_totals();
-	$renewal_order->save();
-
-	// Redirect to payment page
-	wp_safe_redirect( $renewal_order->get_checkout_payment_url() );
-	exit;
-}
-
 
 	public static function get_total_renewals( $user_id, $variation_id ) {
 		$history = get_user_meta( $user_id, "gmp_subscription_history_{$variation_id}", true );
