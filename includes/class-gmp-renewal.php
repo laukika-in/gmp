@@ -108,7 +108,8 @@ add_action( 'wp_loaded', [ __CLASS__, 'maybe_add_extension_to_cart' ] );
 			// Show only for GMP Plan products
 			if ( has_term( 'gmp-plan', 'product_cat', $product_id ) ) {
 				$checkout_url = wc_get_checkout_url() . '?gmp_extension=' . $subscription->get_id();
-				echo '<p><a class="button alt" href="' . esc_url( $checkout_url ) . '">Pay Extension EMI</a></p>';
+				echo '<p><a class="button alt" href="' . esc_url( wc_get_checkout_url() . '?gmp_extension=' . $subscription->get_id() ) . '">Pay Extension EMI</a></p>';
+
 				break; // Show button only once per subscription
 			}
 		}
@@ -121,30 +122,46 @@ public static function maybe_add_extension_to_cart() {
 
 	$sub_id = absint( $_GET['gmp_extension'] );
 	$subscription = wcs_get_subscription( $sub_id );
+
 	if ( ! $subscription || $subscription->get_user_id() !== get_current_user_id() ) {
 		return;
 	}
 
+	// Check if subscription has GMP plan product
+	$has_gmp = false;
 	foreach ( $subscription->get_items() as $item ) {
-		$product_id   = $item->get_product_id();
-		$variation_id = $item->get_variation_id() ?: $product_id;
-
-		if ( ! has_term( 'gmp-plan', 'product_cat', $product_id ) ) {
-			continue;
+		$product_id = $item->get_product_id();
+		if ( has_term( 'gmp-plan', 'product_cat', $product_id ) ) {
+			$has_gmp = true;
+			break;
 		}
-
-		WC()->cart->empty_cart();
-
-		WC()->cart->add_to_cart( $product_id, 1, $variation_id, [], [
-			'gmp_extension'        => true,
-			//'subscription_renewal' => true,
-		] );
-
-		// Redirect to checkout
-		wp_safe_redirect( wc_get_checkout_url() );
-		exit;
 	}
+	if ( ! $has_gmp ) {
+		return;
+	}
+
+	// Create a renewal order (this auto links it to subscription)
+	$renewal_order = wcs_create_renewal_order( $subscription );
+
+	if ( ! $renewal_order ) {
+		return;
+	}
+
+	// Optional: update total if extension interest needs to be added
+	// Example: add ₹50 to each item
+	foreach ( $renewal_order->get_items() as $item ) {
+		$original_total = $item->get_total();
+		$item->set_total( $original_total + 50 ); // Adjust this interest as needed
+	}
+	$renewal_order->calculate_totals();
+	$renewal_order->save();
+
+	// Redirect to payment page
+	$pay_url = $renewal_order->get_checkout_payment_url();
+	wp_safe_redirect( $pay_url );
+	exit;
 }
+
 
 
 
