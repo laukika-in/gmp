@@ -14,7 +14,8 @@ class GMP_Renewal {
 
 		// 3) Prevent adding a duplicate active subscription to the cart
 		add_filter( 'woocommerce_add_to_cart_validation', [ __CLASS__, 'prevent_duplicate_subscription' ], 20, 6 ); 
-    add_filter( 'wcs_view_subscription_actions', [ __CLASS__, 'maybe_add_extension_renew_action' ], 15, 2 );
+		    add_filter( 'wcs_view_subscription_actions', [ __CLASS__, 'maybe_add_extension_renew_action' ], 20, 2 );
+
 
 	}
 
@@ -23,55 +24,47 @@ class GMP_Renewal {
       return $actions;
     }
 
-    // Grab the first line item (assumes one product per subscription)
+    // Grab the first (and only) line item
     $items = $subscription->get_items();
     if ( empty( $items ) ) {
       return $actions;
     }
     $item = reset( $items );
 
-    // Determine which product/variation this is
+    // Determine variation + product
     $variation_id = $item->get_variation_id() ?: $item->get_product_id();
     $product      = wc_get_product( $variation_id );
-    if ( ! $product ) {
+    if ( ! $product || ! $product->is_type( 'subscription_variation' ) ) {
       return $actions;
     }
 
-    // 1) Lock-period length: from the product’s “Subscription length” setting
-    $lock_count = intval( $product->get_meta( '_subscription_length' ) );
+    // 1) Lock-period instalment count
+    $lock_count = intval( $product->get_meta( '_subscription_length' ) ); 
     if ( $lock_count <= 0 ) {
-      // Infinite-length subscriptions shouldn’t use extension logic
       return $actions;
     }
 
-    // 2) Extension-instalments allowed (from your meta)
+    // 2) Extension instalments allowed
     $ext_count = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
     if ( $ext_count <= 0 ) {
-      return $actions; // no extension enabled
+      return $actions;
     }
 
     // 3) How many instalments the user has already paid?
-    $user_id    = get_current_user_id();
-    $paid_count = self::get_total_renewals( $user_id, $variation_id );
+    $paid_count = self::get_total_renewals( get_current_user_id(), $variation_id );
 
-    // Only show “Renew now” if:
-    //   – They’ve paid at least the lock-period instalments AND
-    //   – They haven’t yet exceeded lock + extension instalments
+    // If they've finished the lock-period but not yet used all extension instalments,
+    // re-add the "Renew Now" button pointing at the early-renewal URL.
     if ( $paid_count >= $lock_count && $paid_count < ( $lock_count + $ext_count ) ) {
-
-      // Build the early-renewal URL (same as WooCommerce Subscriptions uses)
-      $renew_url = wcs_get_renewal_url( $subscription->get_id() );
-
-      // Inject our button
-      $actions['gmp_renew_extension'] = [
-        'url'    => wp_nonce_url( $renew_url, 'renew_subscription', 'wc_renew_subscription_nonce' ),
-        'name'   => __( 'Renew now', 'gold-money-plan' ),
-        'action' => 'renew',  // CSS class “renew” for styling
+      $actions['subscription_renewal_early'] = [
+        'url'  => wcs_get_early_renewal_url( $subscription ),
+        'name' => __( 'Renew now', 'gold-money-plan' ),
       ];
     }
 
     return $actions;
   }
+
 
 	public static function record_subscription_renewal( $order_id ) {
 		$order = wc_get_order( $order_id );
