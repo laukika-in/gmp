@@ -263,34 +263,44 @@ public static function snapshot_interest_on_renewal_payment_complete( $subscript
     $renewal_order->save();
 }
 
-
 public static function initialize_interest_schedule( $subscription, $order ) {
     // 1) Locate the GMP line item from the initial order
     foreach ( $order->get_items() as $item ) {
         if ( has_term( 'gmp-plan', 'product_cat', $item->get_product_id() ) ) {
+
+            // Determine product/variation and unit price
             $variation_id = $item->get_variation_id() ?: $item->get_product_id();
             $product      = wc_get_product( $variation_id );
-            $qty          = max(1, $item->get_quantity());
+            $qty          = max( 1, $item->get_quantity() );
             $unit_price   = $item->get_total() / $qty;
 
-            // 2) Fetch rates + counts
-            $settings    = get_option( 'gmp_interest_settings', [] );
-            $data        = $settings[ $item->get_product_id() ] ?? [ 'base'=>0, 'ext'=>[] ];
-            $base_pct    = floatval( $data['base'] );
-            $ext_pcts    = (array) $data['ext'];
+            // 2) Fetch configured interest rates
+            $settings  = get_option( 'gmp_interest_settings', [] );
+            $data      = $settings[ $item->get_product_id() ] ?? [ 'base' => 0, 'ext' => [] ];
+            $base_pct  = floatval( $data['base'] );
+            $ext_pcts  = is_array( $data['ext'] ) ? $data['ext'] : [];
 
-            $total       = $product->get_length(); // e.g. 6 days
-            $extension   = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
-            $lock_period = max(0, $total - $extension);
+            // 3a) Total instalments (Stop renewing after)
+            if ( method_exists( $product, 'get_length' ) ) {
+                $total_instalments = intval( $product->get_length() );
+            } else {
+                $total_instalments = intval( $product->get_meta( '_subscription_length', true ) );
+            }
 
-            // 3) Build the schedule
+            // 3b) Extension count you allowed
+            $extension_count   = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
+
+            // 3c) Lock-period = total minus extension
+            $lock_period       = max( 0, $total_instalments - $extension_count );
+
+            // 4) Build the full interest schedule
             $schedule = [];
-            for ( $i = 1; $i <= $total; $i++ ) {
+            for ( $i = 1; $i <= $total_instalments; $i++ ) {
                 if ( $i <= $lock_period ) {
                     $pct = $base_pct;
                 } else {
-                    $idx = $i - $lock_period;
-                    $pct = $ext_pcts[ $idx ] ?? $base_pct;
+                    $idx = $i - $lock_period; 
+                    $pct = isset( $ext_pcts[ $idx ] ) ? floatval( $ext_pcts[ $idx ] ) : $base_pct;
                 }
                 $amt = round( $unit_price * ( $pct / 100 ), 2 );
                 $schedule[ $i ] = [
@@ -299,9 +309,11 @@ public static function initialize_interest_schedule( $subscription, $order ) {
                 ];
             }
 
-            // 4) Persist on the subscription
+            // 5) Save this schedule on the subscription
             $subscription->update_meta_data( '_gmp_interest_schedule', $schedule );
             $subscription->save();
+
+            // only one gmp-plan item per order, so break out
             break;
         }
     }
