@@ -16,7 +16,8 @@ class GMP_Renewal {
 		add_filter( 'woocommerce_add_to_cart_validation', [ __CLASS__, 'prevent_duplicate_subscription' ], 20, 6 );
 
 		// 4) Show extension button on subscription detail page
-		add_filter( 'wcs_view_subscription_actions', [ __CLASS__, 'inject_extension_button_action' ], 10, 2 );
+		add_action( 'woocommerce_before_account_subscription_details', [ __CLASS__, 'show_extension_button_top' ] );
+
 
 	}
 
