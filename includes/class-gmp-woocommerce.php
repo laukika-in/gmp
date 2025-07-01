@@ -195,9 +195,7 @@ class GMP_WooCommerce {
 /**
  * Snapshot the interest rate and amount on each order line
  */
- /**
- * Snapshot the correct interest % & amount on each gmp-plan line item.
- */
+ 
 public static function store_interest_snapshot( $item, $cart_item_key, $values, $order ) {
     $product_id = $item->get_product_id();
     if ( ! has_term( 'gmp-plan', 'product_cat', $product_id ) ) {
@@ -206,64 +204,56 @@ public static function store_interest_snapshot( $item, $cart_item_key, $values, 
 
     // 1) Fetch saved interest settings
     $settings      = get_option( 'gmp_interest_settings', [] );
-    $interest_data = isset( $settings[ $product_id ] )
-                   ? $settings[ $product_id ]
-                   : [ 'base' => 0, 'ext'  => [] ];
+    $interest_data = $settings[ $product_id ] ?? [ 'base' => 0, 'ext' => [] ];
     $base_pct      = floatval( $interest_data['base'] );
-    $ext_pcts      = is_array( $interest_data['ext'] ) ? $interest_data['ext'] : [];
-
-    // --- NEW LOGIC START ---
+    $ext_pcts      = (array) $interest_data['ext'];
 
     // Determine the actual subscription product (variation or parent)
     $variation_id      = $item->get_variation_id() ?: $product_id;
     $subscription_prod = wc_get_product( $variation_id );
 
-    // 2) Read the lock-period from the subscription length (e.g. 4 days)
-    $lock_period       = intval( $subscription_prod->get_meta( '_subscription_length', true ) );
+    // 2) Correctly get the lock-period length
+    if ( method_exists( $subscription_prod, 'get_length' ) ) {
+        $lock_period = intval( $subscription_prod->get_length() );
+    } else {
+        $lock_period = intval( $subscription_prod->get_meta( '_subscription_length', true ) );
+    }
 
-    // 3) Read how many extension instalments you allowed (still stored in months meta)
-    $extension_count   = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
+    // 3) How many extension instalments you allowed?
+    $extension_count = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
 
-    // 4) Count how many instalments have already been paid
+    // 4) Count how many payments have already been made
     $user_id           = $order->get_user_id() ?: get_current_user_id();
     $history_key       = "gmp_subscription_history_{$variation_id}";
     $history           = get_user_meta( $user_id, $history_key, true );
     $paid_count        = is_array( $history ) ? count( $history ) : 0;
-
-    // This instalment number is paid_count + 1
     $instalment_number = $paid_count + 1;
 
-    // 5) Pick the rate: base for 1→lock_period, else extension
+    // 5) Pick the correct rate
     if ( $instalment_number <= $lock_period ) {
+        // lock-period instalment
         $apply_pct = $base_pct;
     } else {
-        $ext_index = $instalment_number - $lock_period; 
-        if ( $ext_index >= 1 
-          && $ext_index <= $extension_count 
-          && isset( $ext_pcts[ $ext_index ] ) 
-        ) {
+        // extension-period instalment
+        $ext_index = $instalment_number - $lock_period;
+        if ( isset( $ext_pcts[ $ext_index ] ) && $ext_index <= $extension_count ) {
             $apply_pct = floatval( $ext_pcts[ $ext_index ] );
         } else {
-            // fallback to base if you haven’t configured that extension slot
             $apply_pct = $base_pct;
         }
     }
-
-    // --- NEW LOGIC END ---
 
     // 6) Compute unit EMI & interest amount
     $qty        = max( 1, $item->get_quantity() );
     $unit_price = $item->get_total() / $qty;
     $int_amt    = round( $unit_price * ( $apply_pct / 100 ), 2 );
 
-    // 7) Store it on the line item
-    $item->add_meta_data( '_gmp_interest_percent',    $apply_pct, true );
-    $item->add_meta_data( '_gmp_interest_amount',     $int_amt,   true );
-    $item->add_meta_data( '_gmp_instalment_number',   $instalment_number, true );
+    // 7) Snapshot it
+    $item->add_meta_data( '_gmp_interest_percent',  $apply_pct, true );
+    $item->add_meta_data( '_gmp_interest_amount',   $int_amt,   true );
+    $item->add_meta_data( '_gmp_instalment_number', $instalment_number, true );
 }
-
-
-    /**
+     /**
      * Fired on the admin order page.
      * Looks up the first subscription linked to this order,
      * then renders the same table we use in the frontend.
