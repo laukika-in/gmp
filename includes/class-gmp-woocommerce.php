@@ -386,10 +386,22 @@ protected static function output_interest_table( $subscription ) {
     $product      = wc_get_product( $variation_id );
 
     // 2) Fetch your interest settings
-    $settings    = get_option( 'gmp_interest_settings', [] );
-    $cfg         = $settings[ $item->get_product_id() ] ?? [ 'base' => 0, 'ext' => [] ];
-    $base_pct    = floatval( $cfg['base'] );
-    $ext_pcts    = is_array( $cfg['ext'] ) ? $cfg['ext'] : [];
+    // 2) Fetch your interest settings by variation ID (then parent if missing)
+$settings    = get_option( 'gmp_interest_settings', [] );
+$variation_id = $item->get_variation_id() ?: $item->get_product_id();
+
+// try variation first, then parent product
+if ( isset( $settings[ $variation_id ] ) ) {
+    $cfg = $settings[ $variation_id ];
+} elseif ( isset( $settings[ $item->get_product_id() ] ) ) {
+    $cfg = $settings[ $item->get_product_id() ];
+} else {
+    $cfg = [ 'base' => 0, 'ext' => [] ];
+}
+
+$base_pct = floatval( $cfg['base'] );
+$ext_pcts = is_array( $cfg['ext'] ) ? $cfg['ext'] : [];
+
 
     // 3) Determine lock vs extension
     $total       = intval( $product->get_meta( '_subscription_length', true ) );
