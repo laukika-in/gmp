@@ -421,8 +421,29 @@ $ext_pcts_raw = is_array( $cfg['ext'] ) ? $cfg['ext'] : [];
 $ext_pcts = array_values( $ext_pcts_raw ); // Reindex to 0-based keys
 
   
- $lock_period     = intval( get_post_meta( $variation_id, '_gmp_lock_period', true ) );
+// 1. Get variation-level product object
+$product = wc_get_product( $variation_id );
+$parent_id = $product->get_parent_id();
+
+// 2. Try reading meta from variation, else parent
+$lock_days = intval( get_post_meta( $variation_id, '_gmp_lock_period', true ) );
+if ( ! $lock_days && $parent_id ) {
+    $lock_days = intval( get_post_meta( $parent_id, '_gmp_lock_period', true ) );
+}
+
 $extension_count = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
+if ( ! $extension_count && $parent_id ) {
+    $extension_count = intval( get_post_meta( $parent_id, '_gmp_extension_months', true ) );
+}
+error_log( print_r( [
+    'variation_id' => $variation_id,
+    'product_id' => $parent_id,
+    'lock_days' => $lock_days,
+    'extension' => $extension_count,
+    'base_pct' => $base_pct,
+    'ext_pcts' => $ext_pcts,
+    'unit_price' => $unit_price
+], true ) );
 
 // 4) Get the payment history you already recorded
 $user_id     = $subscription->get_user_id();
