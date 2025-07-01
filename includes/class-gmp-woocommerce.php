@@ -400,7 +400,9 @@ if ( isset( $settings[ $variation_id ] ) ) {
 }
 
 $base_pct = floatval( $cfg['base'] );
-$ext_pcts = is_array( $cfg['ext'] ) ? $cfg['ext'] : [];
+$ext_pcts_raw = is_array( $cfg['ext'] ) ? $cfg['ext'] : [];
+$ext_pcts = array_values( $ext_pcts_raw ); // Reindex to 0-based keys
+
 
 
     // 3) Determine lock vs extension
