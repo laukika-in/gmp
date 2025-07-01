@@ -31,7 +31,12 @@ class GMP_WooCommerce {
 
         // Interest Snapshots
         add_action('woocommerce_checkout_create_order_line_item', [__CLASS__, 'store_interest_snapshot'], 10, 4);
-
+add_action(
+  'woocommerce_subscriptions_renewal_order_created',
+  [ __CLASS__, 'snapshot_interest_on_scheduled_renewal' ],
+  10,
+  2
+);
         // Frontend + Admin Related Order Columns
         add_filter('wcs_related_orders_table_row', ['GMP_Interest_Meta', 'add_admin_column'], 10, 3);
         add_filter('wcs_my_subscriptions_related_orders_column_gmp_interest', ['GMP_Interest_Meta', 'get_column']);
@@ -252,6 +257,14 @@ public static function store_interest_snapshot( $item, $cart_item_key, $values, 
     $item->add_meta_data( '_gmp_interest_percent',  $apply_pct, true );
     $item->add_meta_data( '_gmp_interest_amount',   $int_amt,   true );
     $item->add_meta_data( '_gmp_instalment_number', $instalment_number, true );
+}
+public static function snapshot_interest_on_scheduled_renewal( $renewal_order, $subscription ) {
+  foreach ( $renewal_order->get_items() as $item ) {
+    // re-use your existing logic
+    self::store_interest_snapshot( $item, null, null, $renewal_order );
+  }
+  // make sure the meta gets saved
+  $renewal_order->save();
 }
      /**
      * Fired on the admin order page.
