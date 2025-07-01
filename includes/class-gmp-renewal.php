@@ -137,7 +137,7 @@ public static function maybe_add_extension_to_cart() {
 
 		WC()->cart->add_to_cart( $product_id, 1, $variation_id, [], [
 			'gmp_extension'        => true,
-			'subscription_renewal' => true,
+			//'subscription_renewal' => true,
 		] );
 
 		// Redirect to checkout
