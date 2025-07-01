@@ -379,104 +379,77 @@ public static function initialize_interest_schedule( $subscription, $order ) {
  * in date order, and calculates the correct rate per instalment.
  */
 protected static function output_interest_table( $subscription ) {
-    // 1) Load your interest settings once
-    $all_settings = get_option( 'gmp_interest_settings', [] );
-
-    // 2) Build a chronological list: first the parent order, then all renewals
-    $order_ids   = [];
-    $parent_id   = $subscription->get_parent_id();
-    if ( $parent_id ) {
-        $order_ids[] = $parent_id;
-    }
-    $renewals = $subscription->get_related_orders( ['renewal'] );
-    if ( is_array( $renewals ) ) {
-        $order_ids = array_merge( $order_ids, $renewals );
-    }
-
-    if ( empty( $order_ids ) ) {
+    // 1) Grab the single product variation for this subscription
+    $items = $subscription->get_items();
+    if ( empty( $items ) ) {
         echo '<p>No EMI records found.</p>';
         return;
     }
+    $item         = reset( $items );
+    $variation_id = $item->get_variation_id() ?: $item->get_product_id();
+    $product      = wc_get_product( $variation_id );
 
-    // 3) Sort them by creation date ascending
-    usort( $order_ids, function( $a, $b ) {
-        $o1 = wc_get_order( $a );
-        $o2 = wc_get_order( $b );
-        if ( ! $o1 || ! $o2 ) {
-            return 0;
-        }
-        return $o1->get_date_created()->getTimestamp()
-             <=> $o2->get_date_created()->getTimestamp();
-    });
+    // 2) Fetch your interest settings
+    $settings    = get_option( 'gmp_interest_settings', [] );
+    $cfg         = $settings[ $item->get_product_id() ] ?? [ 'base' => 0, 'ext' => [] ];
+    $base_pct    = floatval( $cfg['base'] );
+    $ext_pcts    = is_array( $cfg['ext'] ) ? $cfg['ext'] : [];
+
+    // 3) Determine lock vs extension
+    $total       = intval( $product->get_meta( '_subscription_length', true ) );
+    $extension   = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
+    $lock_period = max( 0, $total - $extension );
+
+    // 4) Get the payment history you already recorded
+    $user_id     = $subscription->get_user_id();
+    $history_key = "gmp_subscription_history_{$variation_id}";
+    $history     = get_user_meta( $user_id, $history_key, true );
+    if ( empty( $history ) || ! is_array( $history ) ) {
+        echo '<p>No EMI payments recorded yet.</p>';
+        return;
+    }
 
     echo '<table class="shop_table shop_table_responsive"><thead><tr>';
     echo '<th>Instalment</th><th>Order</th><th>Date</th><th>Product</th>';
     echo '<th>Base EMI</th><th>Interest %</th><th>Total</th>';
     echo '</tr></thead><tbody>';
 
-    $instalment = 0;
+    // 5) Loop history entries in order
+    foreach ( $history as $idx => $entry ) {
+        $instalment = $idx + 1;
+        $order_id   = intval( $entry['order_id'] );
+        $date       = esc_html( substr( $entry['date'], 0, 10 ) );
+        $base_emi   = floatval( $entry['amount'] );
 
-    // 4) …then walk them, unit‐by‐unit…
-    foreach ( $order_ids as $order_id ) {
-        $order = wc_get_order( $order_id );
-        if ( ! $order ) {
-            continue;
+        // pick the right % rate
+        if ( $instalment <= $lock_period ) {
+            $pct = $base_pct;
+        } else {
+            $ext_index = $instalment - $lock_period;
+            $pct       = isset( $ext_pcts[ $ext_index ] )
+                       ? floatval( $ext_pcts[ $ext_index ] )
+                       : $base_pct;
         }
 
-        foreach ( $order->get_items() as $item ) {
-            if ( ! has_term( 'gmp-plan', 'product_cat', $item->get_product_id() ) ) {
-                continue;
-            }
+        // compute amounts
+        $interest   = round( $base_emi * ( $pct / 100 ), 2 );
+        $total_amt  = $base_emi + $interest;
 
-            $unit_price = $item->get_total() / max( 1, $item->get_quantity() );
-            $qty        = max( 1, $item->get_quantity() );
-
-            // Settings for this product…
-            $prod_id   = $item->get_product_id();
-            $cfg       = $all_settings[ $prod_id ] ?? [ 'base'=>0, 'ext'=>[] ];
-            $base_pct  = floatval( $cfg['base'] );
-            $ext_pcts  = is_array( $cfg['ext'] ) ? $cfg['ext'] : [];
-
-            // Compute lock vs extension…
-            $variation_id = $item->get_variation_id() ?: $prod_id;
-            $product      = wc_get_product( $variation_id );
-            $lock_days    = method_exists( $product, 'get_length' )
-                          ? intval( $product->get_length() )
-                          : intval( $product->get_meta( '_subscription_length', true ) );
-            $extension    = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
-            $lock_period  = $lock_days;
-
-            // Loop per unit:
-            for ( $i = 0; $i < $qty; $i++ ) {
-                $instalment++;
-
-                // base for 1→lock, then extension 1…N
-                if ( $instalment <= $lock_period ) {
-                    $pct = $base_pct;
-                } else {
-                    $idx = $instalment - $lock_period;
-                    $pct = $ext_pcts[ $idx ] ?? $base_pct;
-                }
-
-                $interest = round( $unit_price * ( $pct / 100 ), 2 );
-                $total    = $unit_price + $interest;
-
-                echo '<tr>';
-                echo '<td>' . esc_html( $instalment ) . '</td>';
-                echo '<td><a href="' . esc_url( get_edit_post_link( $order_id ) ) . '">#'
-                     . esc_html( $order->get_order_number() ) . '</a></td>';
-                echo '<td>' . esc_html( $order->get_date_created()->date( 'Y-m-d' ) ) . '</td>';
-                echo '<td>' . esc_html( $item->get_name() ) . '</td>';
-                echo '<td>' . wc_price( $unit_price ) . '</td>';
-                echo '<td>' . number_format_i18n( $pct, 2 ) . '%</td>';
-                echo '<td>' . wc_price( $total ) . '</td>';
-                echo '</tr>';
-            }
-        }
+        echo '<tr>';
+        echo '<td>' . esc_html( $instalment ) . '</td>';
+        echo '<td><a href="' . esc_url( get_edit_post_link( $order_id ) ) . '">#'
+             . esc_html( wc_get_order( $order_id )->get_order_number() ) . '</a></td>';
+        echo '<td>' . $date . '</td>';
+        echo '<td>' . esc_html( $product->get_name() ) . '</td>';
+        echo '<td>' . wc_price( $base_emi ) . '</td>';
+        echo '<td>' . number_format_i18n( $pct, 2 ) . '%</td>';
+        echo '<td>' . wc_price( $total_amt ) . '</td>';
+        echo '</tr>';
     }
 
     echo '</tbody></table>';
 }
+
 
 
 }
