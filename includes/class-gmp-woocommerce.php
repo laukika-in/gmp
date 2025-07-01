@@ -405,12 +405,9 @@ $base_pct = floatval( $cfg['base'] );
 $ext_pcts_raw = is_array( $cfg['ext'] ) ? $cfg['ext'] : [];
 $ext_pcts = array_values( $ext_pcts_raw ); // Reindex to 0-based keys
 
-
-
-    // 3) Determine lock vs extension
-    $total       = intval( $product->get_meta( '_subscription_length', true ) );
-    $extension   = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
-    $lock_period = max( 0, $total - $extension );
+  
+ $lock_period     = intval( get_post_meta( $variation_id, '_gmp_lock_period', true ) );
+$extension_count = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
 
 // 4) Get the payment history you already recorded
 $user_id     = $subscription->get_user_id();
@@ -432,7 +429,6 @@ if ( empty( $history ) ) {
     return;
 }
 
-
     echo '<table class="shop_table shop_table_responsive"><thead><tr>';
     echo '<th>Instalment</th><th>Order</th><th>Date</th><th>Product</th>';
     echo '<th>Base EMI</th><th>Interest %</th><th>Total</th>';
@@ -452,16 +448,11 @@ error_log( print_r( [
         $base_emi   = floatval( $entry['amount'] );
 
         // pick the right % rate
-       if ( $instalment <= $lock_period ) {
+if ( $instalment <= $lock_period ) {
     $pct = $base_pct;
 } else {
-    // shift to zero‐based array (ext_pcts[0] is first extension day)
-    $zero_index = ( $instalment - $lock_period ) - 1;
-    if ( isset( $ext_pcts[ $zero_index ] ) ) {
-        $pct = floatval( $ext_pcts[ $zero_index ] );
-    } else {
-        $pct = $base_pct;
-    }
+    $ext_index = ( $instalment - $lock_period ) - 1;
+    $pct = isset( $ext_pcts[ $ext_index ] ) ? floatval( $ext_pcts[ $ext_index ] ) : $base_pct;
 }
 
         // compute amounts
