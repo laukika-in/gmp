@@ -405,14 +405,10 @@ $user_id     = $subscription->get_user_id();
 $history_key = "gmp_subscription_history_{$variation_id}";
 $history     = get_user_meta( $user_id, $history_key, true );
 
-// ── NEW: only keep entries whose order_id is in this subscription ──
-$valid_orders = [];
-if ( $pid = $subscription->get_parent_id() ) {
-    $valid_orders[] = $pid;
-}
-$renewals = $subscription->get_related_orders( ['renewal'] );
-if ( is_array( $renewals ) ) {
-    $valid_orders = array_merge( $valid_orders, $renewals );
+// ── NEW: filter to *this* subscription’s orders ──
+$valid_orders = $subscription->get_related_orders();
+if ( ! is_array( $valid_orders ) ) {
+    $valid_orders = [];
 }
 $history = array_values( array_filter( (array) $history, function( $entry ) use ( $valid_orders ) {
     return in_array( intval( $entry['order_id'] ), $valid_orders, true );
