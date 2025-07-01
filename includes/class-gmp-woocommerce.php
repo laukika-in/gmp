@@ -367,17 +367,15 @@ public static function initialize_interest_schedule( $subscription, $order ) {
         self::output_interest_table( $subscription );
     }
 
-   protected static function output_interest_table( $subscription ) {
-    // Load interest settings once
+ protected static function output_interest_table( $subscription ) {
+    // Load all interest settings up front
     $all_settings = get_option( 'gmp_interest_settings', [] );
 
-    // 1) Build a chronological list: [ parent_order, renewal1, renewal2, ... ]
+    // 1) Build a chronological list of just the parent + renewals
     $order_ids = [];
-    $parent_id = $subscription->get_parent_id();
-    if ( $parent_id ) {
-        $order_ids[] = $parent_id;
+    if ( $parent = $subscription->get_parent_id() ) {
+        $order_ids[] = $parent;
     }
-    // get only actual renewals
     $renewals = $subscription->get_related_orders( ['renewal'] );
     if ( is_array( $renewals ) ) {
         $order_ids = array_merge( $order_ids, $renewals );
@@ -393,6 +391,7 @@ public static function initialize_interest_schedule( $subscription, $order ) {
     echo '</tr></thead><tbody>';
 
     $instalment = 0;
+
     foreach ( $order_ids as $order_id ) {
         $instalment++;
         $order = wc_get_order( $order_id );
@@ -405,25 +404,23 @@ public static function initialize_interest_schedule( $subscription, $order ) {
                 continue;
             }
 
-            // Product and base EMI
+            // Product / quantity
             $variation_id      = $item->get_variation_id() ?: $item->get_product_id();
             $product           = wc_get_product( $variation_id );
             $qty               = max( 1, $item->get_quantity() );
             $base_emi          = $item->get_total() / $qty;
 
-            // Settings
+            // Settings for this product
             $settings          = $all_settings[ $item->get_product_id() ] ?? [ 'base'=>0, 'ext'=>[] ];
             $base_pct          = floatval( $settings['base'] );
             $ext_pcts          = is_array( $settings['ext'] ) ? $settings['ext'] : [];
 
-            // Determine total vs extension
-            $total_instalments = method_exists( $product, 'get_length' )
-                ? intval( $product->get_length() )
-                : intval( $product->get_meta( '_subscription_length', true ) );
+            // Total vs extension
+            $total_instalments = intval( $product->get_length() );
             $extension_count   = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
             $lock_period       = max( 0, $total_instalments - $extension_count );
 
-            // Pick rate
+            // Pick the right rate
             if ( $instalment <= $lock_period ) {
                 $pct = $base_pct;
             } else {
@@ -431,11 +428,11 @@ public static function initialize_interest_schedule( $subscription, $order ) {
                 $pct = isset( $ext_pcts[ $idx ] ) ? floatval( $ext_pcts[ $idx ] ) : $base_pct;
             }
 
-            // Interest amount & total
+            // Calculate interest amount and total
             $interest_amount = round( $base_emi * ( $pct / 100 ), 2 );
             $total_amount    = $base_emi + $interest_amount;
 
-            // Output row
+            // Render the row
             echo '<tr>';
             echo '<td>' . esc_html( $instalment ) . '</td>';
             echo '<td><a href="' . esc_url( get_edit_post_link( $order_id ) ) . '">#'
@@ -451,5 +448,6 @@ public static function initialize_interest_schedule( $subscription, $order ) {
 
     echo '</tbody></table>';
 }
+
 
 }
