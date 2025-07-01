@@ -400,14 +400,30 @@ protected static function output_interest_table( $subscription ) {
     $extension   = intval( get_post_meta( $variation_id, '_gmp_extension_months', true ) );
     $lock_period = max( 0, $total - $extension );
 
-    // 4) Get the payment history you already recorded
-    $user_id     = $subscription->get_user_id();
-    $history_key = "gmp_subscription_history_{$variation_id}";
-    $history     = get_user_meta( $user_id, $history_key, true );
-    if ( empty( $history ) || ! is_array( $history ) ) {
-        echo '<p>No EMI payments recorded yet.</p>';
-        return;
-    }
+// 4) Get the payment history you already recorded
+$user_id     = $subscription->get_user_id();
+$history_key = "gmp_subscription_history_{$variation_id}";
+$history     = get_user_meta( $user_id, $history_key, true );
+
+// ── NEW: only keep entries whose order_id is in this subscription ──
+$valid_orders = [];
+if ( $pid = $subscription->get_parent_id() ) {
+    $valid_orders[] = $pid;
+}
+$renewals = $subscription->get_related_orders( ['renewal'] );
+if ( is_array( $renewals ) ) {
+    $valid_orders = array_merge( $valid_orders, $renewals );
+}
+$history = array_values( array_filter( (array) $history, function( $entry ) use ( $valid_orders ) {
+    return in_array( intval( $entry['order_id'] ), $valid_orders, true );
+} ) );
+
+// if nothing remains…
+if ( empty( $history ) ) {
+    echo '<p>No EMI payments recorded yet for this subscription.</p>';
+    return;
+}
+
 
     echo '<table class="shop_table shop_table_responsive"><thead><tr>';
     echo '<th>Instalment</th><th>Order</th><th>Date</th><th>Product</th>';
