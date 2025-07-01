@@ -95,7 +95,7 @@ class GMP_Renewal {
 		return $passed;
 	}
 
-	public static function inject_extension_button_action( $actions, $subscription ) {
+public static function show_extension_button_top( $subscription ) {
     $user_id = get_current_user_id();
     $product_id = null;
     $variation_id = null;
@@ -107,32 +107,33 @@ class GMP_Renewal {
     }
 
     if ( ! $product_id || ! has_term( 'gmp-plan', 'product_cat', $product_id ) ) {
-        return $actions;
+        return;
     }
 
+    // Get extension interest config
     $settings      = get_option( 'gmp_interest_settings', [] );
     $ext_interest  = $settings[ $product_id ]['ext'] ?? [];
     $ext_limit     = count( $ext_interest );
 
+    // Get original billing length
     $product = wc_get_product( $variation_id );
-    $base_length = method_exists( $product, 'get_length' ) ? intval( $product->get_length() ) : 0;
+    $base_length = $product ? intval( $product->get_meta( '_subscription_length' ) ) : 0;
 
+    // Get how many base EMIs paid
     $history_key = "gmp_subscription_history_{$variation_id}";
     $history     = get_user_meta( $user_id, $history_key, true ) ?: [];
     $base_paid   = count( $history );
 
+    // Get how many extension slots used
     $used_ext = intval( get_user_meta( $user_id, "_gmp_extension_used_{$subscription->get_id()}", true ) );
 
-    if ( $base_length > 0 && $base_paid >= $base_length && $used_ext < $ext_limit ) {
+    // Show only if user completed base EMIs and has extension left
+    if ( $base_paid >= $base_length && $used_ext < $ext_limit ) {
         $checkout_url = wc_get_checkout_url() . '?gmp_extension=' . $subscription->get_id();
-        $actions['gmp_extension'] = [
-            'url'  => esc_url( $checkout_url ),
-            'name' => __( 'Pay Extension EMI', 'gold-money-plan' ),
-        ];
+        echo '<p><a class="button button-primary" href="' . esc_url( $checkout_url ) . '">Pay Extension EMI</a></p>';
     }
-
-    return $actions;
 }
+
 
 
 
