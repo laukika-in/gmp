@@ -19,6 +19,15 @@ class GMP_Product_Fields {
       'description'       => __('How many extra payments can be made after lock-period?', 'gmp'),
       'desc_tip'          => true,
     ]);
+    woocommerce_wp_text_input([
+  'id'                => '_gmp_lock_period',
+  'label'             => __( 'Lock-Period', 'gmp' ),
+  'type'              => 'number',
+  'custom_attributes' => [ 'min' => '0', 'step' => '1' ],
+  'description'       => __( 'How many days/months before extension kicks in?', 'gmp' ),
+  'desc_tip'          => true,
+]);
+
     echo '</div>';
 
     // Tiny JS to show/hide extension-months field
@@ -44,5 +53,9 @@ class GMP_Product_Fields {
     if ( isset( $_POST['_gmp_extension_months'] ) ) {
       update_post_meta( $post_id, '_gmp_extension_months', intval( $_POST['_gmp_extension_months'] ) );
     }
+    if ( isset( $_POST['_gmp_lock_period'] ) ) {
+  update_post_meta( $post_id, '_gmp_lock_period', intval( $_POST['_gmp_lock_period'] ) );
+}
+
   }
 }
