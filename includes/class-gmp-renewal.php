@@ -115,7 +115,7 @@ add_action( 'wp_loaded', [ __CLASS__, 'maybe_add_extension_to_cart' ] );
 	}
 
 public static function maybe_add_extension_to_cart() {
-	if ( ! is_user_logged_in() || empty( $_GET['gmp_extension'] ) || is_admin() || is_cart() || is_checkout() ) {
+	if ( ! is_user_logged_in() || empty( $_GET['gmp_extension'] ) || is_admin() ) {
 		return;
 	}
 
@@ -133,15 +133,14 @@ public static function maybe_add_extension_to_cart() {
 			continue;
 		}
 
-		// Remove existing cart contents
 		WC()->cart->empty_cart();
 
-		// Add variation product manually as a renewal
 		WC()->cart->add_to_cart( $product_id, 1, $variation_id, [], [
-			'subscription_renewal' => true,
 			'gmp_extension'        => true,
+			'subscription_renewal' => true,
 		] );
 
+		// Redirect to checkout
 		wp_safe_redirect( wc_get_checkout_url() );
 		exit;
 	}
