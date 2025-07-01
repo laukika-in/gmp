@@ -18,6 +18,7 @@ class GMP_Renewal {
 		// 4) Show extension button on subscription detail page
 		add_action( 'wcs_subscription_details_table_after_dates', [ __CLASS__, 'show_extension_button' ] );
 
+add_action( 'wp_loaded', [ __CLASS__, 'maybe_add_extension_to_cart' ] );
 
 
 	}
@@ -98,22 +99,52 @@ class GMP_Renewal {
 	}
 
 	public static function show_extension_button( $subscription ) {
-    $user_id = get_current_user_id();
+		$user_id = get_current_user_id();
 
-    foreach ( $subscription->get_items() as $item ) {
-        $product_id   = $item->get_product_id();
-        $variation_id = $item->get_variation_id() ?: $product_id;
+		foreach ( $subscription->get_items() as $item ) {
+			$product_id   = $item->get_product_id();
+			$variation_id = $item->get_variation_id() ?: $product_id;
 
-        // Show only for GMP Plan products
-        if ( has_term( 'gmp-plan', 'product_cat', $product_id ) ) {
-            $checkout_url = wc_get_checkout_url() . '?gmp_extension=' . $subscription->get_id();
-            echo '<p><a class="button alt" href="' . esc_url( $checkout_url ) . '">Pay Extension EMI</a></p>';
-            break; // Show button only once per subscription
-        }
-    }
-}
+			// Show only for GMP Plan products
+			if ( has_term( 'gmp-plan', 'product_cat', $product_id ) ) {
+				$checkout_url = wc_get_checkout_url() . '?gmp_extension=' . $subscription->get_id();
+				echo '<p><a class="button alt" href="' . esc_url( $checkout_url ) . '">Pay Extension EMI</a></p>';
+				break; // Show button only once per subscription
+			}
+		}
+	}
 
+	public static function maybe_add_extension_to_cart() {
+		if ( ! is_user_logged_in() || empty( $_GET['gmp_extension'] ) || is_admin() || is_cart() || is_checkout() ) {
+			return;
+		}
 
+		$sub_id = absint( $_GET['gmp_extension'] );
+		$subscription = wcs_get_subscription( $sub_id );
+		if ( ! $subscription || $subscription->get_user_id() !== get_current_user_id() ) {
+			return;
+		}
+
+		foreach ( $subscription->get_items() as $item ) {
+			$product_id   = $item->get_product_id();
+			$variation_id = $item->get_variation_id();
+
+			if ( ! $variation_id || ! has_term( 'gmp-plan', 'product_cat', $product_id ) ) {
+				continue;
+			}
+
+			// Clear cart and add renewal product
+			WC()->cart->empty_cart();
+			WC()->cart->add_to_cart( $product_id, 1, $variation_id, [], [
+				'subscription_renewal' => true,
+				'gmp_extension'        => true,
+			] );
+
+			// Redirect to checkout
+			wp_safe_redirect( wc_get_checkout_url() );
+			exit;
+		}
+	}
 
 
 	public static function get_total_renewals( $user_id, $variation_id ) {
