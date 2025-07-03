@@ -34,19 +34,19 @@ class GMP_Checkout_Hook {
                 // Fetch interest settings from settings table (from GMP_Settings)
                 $settings = GMP_Settings::get_interest_for_product( $product_id );
 
-                GMP_EMI_Cycle::create_cycle(
-                    $user_id,
-                    $product_id,
-                    $variation_id,
-                    $settings['lock_months'],
-                    $settings['extension_months'],
-                    $settings['base_interest'],
-                    $settings['extension_interest'] ?? []
-                );
+                $cycle_id = GMP_EMI_Cycle::create_cycle(
+                $user_id,
+                $product_id,
+                $variation_id,
+                $settings['lock_months'],
+                $settings['extension_months'],
+                $settings['base_interest'],
+                $settings['extension_interest'] ?? []
+            );
 
-                // Mark first installment as paid
-                $cycle_id = $wpdb->insert_id;
+            if ( $cycle_id ) {
                 GMP_EMI_Cycle::mark_installment_paid( $cycle_id, $order_id );
+            }
             }
         }
     }

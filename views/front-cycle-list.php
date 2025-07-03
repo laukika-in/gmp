@@ -34,24 +34,28 @@ foreach ( $cycles as $cycle ) {
 
 
     echo '<tr>';
-   
+
     if ( $product ) {
-   $parent     = wc_get_product( $product->get_parent_id() );
-$parent_name = $parent ? $parent->get_name() : '';
-$variation_attrs = $product->get_attributes();
-$query_args = [];
-$label = $parent_name . ' - ' . $variation_attrs;
-foreach ( $variation_attrs as $attr_name => $attr_value ) {
-    $taxonomy = str_replace( 'attribute_', '', $attr_name );
-    $query_args[ 'attribute_' . sanitize_title( $taxonomy ) ] = $attr_value;
-}
+    $parent = wc_get_product( $product->get_parent_id() );
+    $parent_name = $parent ? $parent->get_name() : '';
 
-$link = add_query_arg( $query_args, get_permalink( $parent->get_id() ) );
-   echo '<td><a href="' . esc_url($link) . '">' . esc_html( $label ) . '</a></td>';
+    $variation_string = wc_get_formatted_variation( $product, true, false, true );
+    $label = $parent_name . ' - ' . $variation_string;
 
+    // Build variation URL
+    $variation_attrs = $product->get_attributes();
+    $query_args = [];
+    foreach ( $variation_attrs as $attr_name => $attr_value ) {
+        $taxonomy = str_replace( 'attribute_', '', $attr_name );
+        $query_args[ 'attribute_' . sanitize_title( $taxonomy ) ] = $attr_value;
+    }
+
+    $link = add_query_arg( $query_args, get_permalink( $parent->get_id() ) );
+    echo '<td><a href="' . esc_url($link) . '">' . esc_html( $label ) . '</a></td>';
 } else {
     echo '<td>N/A</td>';
 }
+
 
     echo '<td>' . esc_html( $cycle->start_date ) . '</td>';
     echo '<td>' . esc_html( ucfirst( $cycle->status ) ) . '</td>';
