@@ -29,7 +29,7 @@ echo '<thead><tr>
 
 foreach ( $cycles as $cycle ) {
     $product = wc_get_product( $cycle->variation_id );
-   $url = add_query_arg( 'cycle', $cycle->id, wc_get_account_endpoint_url( 'gold-money-plan' ) );
+   $url = add_query_arg( 'view', $cycle->id, wc_get_account_endpoint_url( 'gold-money-plan' ) );
 
 
     echo '<tr>';
