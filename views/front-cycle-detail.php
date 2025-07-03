@@ -22,6 +22,7 @@ echo '<h4>EMI Installments for Cycle #' . esc_html( $cycle->id ) . '</h4>';
 echo '<table class="woocommerce-table shop_table"><thead><tr>
     <th>#</th><th>Due Date</th><th>EMI</th><th>Interest</th><th>Total</th><th>Status</th>
 </tr></thead><tbody>';
+$total_paid = 0;
 
 foreach ( $installments as $ins ) {
     echo '<tr>';
@@ -38,5 +39,13 @@ foreach ( $installments as $ins ) {
 }
 
     echo '</tr>';
+       if ( $ins->is_paid ) {
+        $total_paid += floatval( $ins->total_with_interest );
+    }
 }
-echo '</tbody></table>';
+echo '</tbody>';
+echo '<tfoot><tr>';
+echo '<td colspan="4"><strong>Total Paid</strong></td>';
+echo '<td colspan="2"><strong>' . wc_price( $total_paid ) . '</strong></td>';
+echo '</tr></tfoot>';
+echo '</table></div>';
