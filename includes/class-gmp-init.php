@@ -1,5 +1,6 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) exit;
+echo "<h2>Debug: GMP Cycles View Loaded</h2>";
 
 class GMP_Init {
 

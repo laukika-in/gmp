@@ -5,7 +5,7 @@ class GMP_MyAccount {
 
     public static function init() {
         // Delay endpoint registration until rewrite system is available
-        add_action( 'init', [ __CLASS__, 'add_account_endpoint' ] );
+        //add_action( 'init', [ __CLASS__, 'add_account_endpoint' ] );
 
         // Account menu item
         add_filter( 'woocommerce_account_menu_items', [ __CLASS__, 'add_menu_item' ] );
