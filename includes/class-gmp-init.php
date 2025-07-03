@@ -39,7 +39,13 @@ class GMP_Init {
     public static function on_activate() {
         // ✅ Create tables
         GMP_DB::create_tables();
-
+if ( isset($_GET['show_rules']) ) {
+        global $wp_rewrite;
+        echo '<pre>';
+        print_r( $wp_rewrite->wp_rewrite_rules() );
+        echo '</pre>';
+        exit;
+    }
          add_rewrite_endpoint( 'gmp-cycles', EP_ROOT | EP_PAGES | EP_PERMALINK );
 
     // Force one-time flush
