@@ -11,6 +11,7 @@ class GMP_Init {
         require_once GMP_PLUGIN_DIR . 'includes/class-gmp-checkout-hook.php';
         require_once GMP_PLUGIN_DIR . 'settings/class-gmp-settings.php';
 
+
         // Admin
         if ( is_admin() ) {
             require_once GMP_PLUGIN_DIR . 'admin/class-gmp-admin-assets.php';
@@ -24,12 +25,15 @@ class GMP_Init {
             GMP_Admin_Menu::init();
             GMP_Product_Meta::init();
             GMP_Settings_Page::init();
+            
         }
 
         // Frontend
         if ( ! is_admin() ) {
             require_once GMP_PLUGIN_DIR . 'frontend/class-gmp-myaccount.php';
+            require_once GMP_PLUGIN_DIR . 'includes/class-gmp-cart-handler.php';
             GMP_MyAccount::init();
+            GMP_Cart_Handler::init();
         }
 
         // Common Hooks

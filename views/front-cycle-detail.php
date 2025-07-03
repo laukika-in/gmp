@@ -32,11 +32,12 @@ $link = add_query_arg( [
 ?>
 
 <h3>Product: <?php echo esc_html( $label ); ?></h3>
-<p>
-    <a href="<?php echo esc_url( $link ); ?>" class="button">Pay Now</a>
-</p>
+
 <?php
 
+if ( $cycle->status === 'active' ) {
+    echo '<p><a href="' . esc_url( $link ) . '" class="button">Pay Now</a></p>';
+}
 
 
 $installments = $wpdb->get_results( $wpdb->prepare(
@@ -76,10 +77,25 @@ echo '<td colspan="2"><strong>' . wc_price( $total_paid ) . '</strong></td>';
 echo '</tr></tfoot>';
 echo '</table>';
 
+$total_emi = 0;
+$total_interest = 0;
+
+foreach ( $installments as $ins ) {
+    if ( $ins->is_paid ) {
+        $total_emi      += floatval( $ins->emi_amount );
+        $total_interest += floatval( $ins->total_with_interest ) - floatval( $ins->emi_amount );
+    }
+}
+
+$total_received = $total_emi + $total_interest;
+
 echo '<br><h4>Summary</h4>';
 echo '<table class="woocommerce-table shop_table"><thead><tr>
-    <th>Title</th><th>Total</th>
+    <th>Description</th><th>Amount</th>
 </tr></thead><tbody>';
 
-echo '<tr><td>Total EMI Paid</td><td>' . wc_price( $total_paid ) . '</td></tr>';
+echo '<tr><td>Total EMI Paid (Principal)</td><td>' . wc_price( $total_emi ) . '</td></tr>';
+echo '<tr><td>Total Returns Received (Interest)</td><td>' . wc_price( $total_interest ) . '</td></tr>';
+echo '<tr><td><strong>Total Paid</strong></td><td><strong>' . wc_price( $total_received ) . '</strong></td></tr>';
+
 echo '</tbody></table>';
