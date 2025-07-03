@@ -1,23 +1,26 @@
 <?php
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 class GMP_Init {
 
     public static function init() {
-        add_action( 'init', [ __CLASS__, 'register_category' ] );
-        add_action( 'wp_enqueue_scripts', [ __CLASS__, 'enqueue_assets' ] );
-
-        // Shortcode to list subscriptions (frontend)
-        add_shortcode( 'gmp_my_subscriptions', [ 'GMP_Frontend', 'render_my_subscriptions' ] );
+        self::load_dependencies();
+        self::init_hooks();
     }
 
-    public static function register_category() {
-        if ( ! term_exists( 'gmp-plan', 'product_cat' ) ) {
-            wp_insert_term( 'GMP Plan', 'product_cat', [ 'slug' => 'gmp-plan' ] );
-        }
+    private static function load_dependencies() {
+        require_once GMP_EMI_PATH . 'includes/admin/class-gmp-admin-menu.php';
+        require_once GMP_EMI_PATH . 'includes/admin/class-gmp-admin-screens.php';
+        require_once GMP_EMI_PATH . 'includes/class-gmp-checkout-handler.php';
+        require_once GMP_EMI_PATH . 'includes/class-gmp-interest-settings.php';
+        require_once GMP_EMI_PATH . 'includes/class-gmp-schedule-tracker.php';
+        require_once GMP_EMI_PATH . 'includes/class-gmp-customer-dashboard.php';
     }
 
-    public static function enqueue_assets() {
-        wp_enqueue_style( 'gmp-style', plugins_url( '../assets/gmp-style.css', __FILE__ ), [], '1.0' );
+    private static function init_hooks() {
+        add_action( 'init', ['GMP_Schedule_Tracker', 'register_post_type'] );
+        add_action( 'woocommerce_order_status_completed', ['GMP_Checkout_Handler', 'handle_order_payment'] );
     }
+
 }
