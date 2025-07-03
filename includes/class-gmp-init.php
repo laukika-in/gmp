@@ -1,26 +1,42 @@
 <?php
-
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 class GMP_Init {
 
     public static function init() {
-        self::load_dependencies();
-        self::init_hooks();
+        // Load Core
+        require_once GMP_PLUGIN_DIR . 'includes/class-gmp-db.php';
+        require_once GMP_PLUGIN_DIR . 'includes/class-gmp-product-helper.php';
+        require_once GMP_PLUGIN_DIR . 'includes/class-gmp-emicycle.php';
+        require_once GMP_PLUGIN_DIR . 'includes/class-gmp-checkout-hook.php';
+        require_once GMP_PLUGIN_DIR . 'settings/class-gmp-settings.php';
+
+        // Admin
+        if ( is_admin() ) {
+            require_once GMP_PLUGIN_DIR . 'admin/class-gmp-admin-assets.php';
+            require_once GMP_PLUGIN_DIR . 'admin/class-gmp-admin-menu.php';
+            require_once GMP_PLUGIN_DIR . 'admin/class-gmp-admin-list.php';
+            require_once GMP_PLUGIN_DIR . 'admin/class-gmp-admin-detail.php';
+
+            GMP_Admin_Assets::init();
+            GMP_Admin_Menu::init();
+        }
+
+        // Frontend
+        if ( ! is_admin() ) {
+            require_once GMP_PLUGIN_DIR . 'frontend/class-gmp-myaccount.php';
+            GMP_MyAccount::init();
+        }
+
+        // Common Hooks
+        GMP_Checkout_Hook::init();
+
+        // On plugin activation
+        register_activation_hook( GMP_PLUGIN_DIR . 'gold-money-plan.php', [ __CLASS__, 'on_activate' ] );
     }
 
-    private static function load_dependencies() {
-        require_once GMP_EMI_PATH . 'includes/admin/class-gmp-admin-menu.php';
-        require_once GMP_EMI_PATH . 'includes/admin/class-gmp-admin-screens.php';
-        require_once GMP_EMI_PATH . 'includes/class-gmp-checkout-handler.php';
-        require_once GMP_EMI_PATH . 'includes/class-gmp-interest-settings.php';
-        require_once GMP_EMI_PATH . 'includes/class-gmp-schedule-tracker.php';
-        require_once GMP_EMI_PATH . 'includes/class-gmp-customer-dashboard.php';
+    public static function on_activate() {
+        GMP_DB::create_tables();
+        flush_rewrite_rules(); // for My Account endpoint
     }
-
-    private static function init_hooks() {
-        add_action( 'init', ['GMP_Schedule_Tracker', 'register_post_type'] );
-        add_action( 'woocommerce_order_status_completed', ['GMP_Checkout_Handler', 'handle_order_payment'] );
-    }
-
 }

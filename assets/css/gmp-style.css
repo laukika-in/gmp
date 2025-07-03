@@ -1,0 +1,9 @@
+/* GMP Frontend Styles */
+table.shop_table {
+    border: 1px solid #ccc;
+    width: 100%;
+}
+.shop_table th,
+.shop_table td {
+    padding: 10px;
+}

@@ -1,0 +1,5 @@
+/* GMP Admin Styles */
+.wrap .widefat th,
+.wrap .widefat td {
+    padding: 8px 10px;
+}

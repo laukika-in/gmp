@@ -1,19 +1,21 @@
 <?php
 /**
  * Plugin Name: Gold Money Plan
- * Description: Custom EMI-based investment plugin using WooCommerce product variations.
- * Version: 1.0.0
+ * Description: Custom EMI-based investment plan using WooCommerce variable products.
+ * Version: 2.0.0
  * Author: Your Name
- * Text Domain: gold-money-plan
- * Domain Path: /languages
+ * Text Domain: gmp
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-define( 'GMP_EMI_VERSION', '1.0' );
-define( 'GMP_EMI_PATH', plugin_dir_path( __FILE__ ) );
-define( 'GMP_EMI_URL', plugin_dir_url( __FILE__ ) );
+// Dynamically fetch plugin version from header
+$plugin_data = get_file_data( __FILE__, [ 'Version' => 'Version' ] );
+define( 'GMP_PLUGIN_VERSION', $plugin_data['Version'] );
 
-require_once GMP_EMI_PATH . 'includes/class-gmp-init.php';
+define( 'GMP_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'GMP_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
-add_action( 'plugins_loaded', ['GMP_Init', 'init'] );
+require_once GMP_PLUGIN_DIR . 'includes/class-gmp-init.php';
+
+add_action( 'plugins_loaded', [ 'GMP_Init', 'init' ] );
