@@ -62,7 +62,10 @@ class GMP_Settings_Page {
                         <tr>
                             <td><strong><?php echo esc_html( $product->get_name() ); ?></strong></td>
                             <td>
-                                <input type="number" name="lock[<?php echo $pid; ?>]" value="<?php echo esc_attr( $lock ); ?>" min="0" />
+                               
+
+                                  <?php echo esc_html( $lock ); ?>
+    <input type="hidden" name="lock[<?php echo $pid; ?>]" value="<?php echo esc_attr( $lock ); ?>" />
                             </td>
                             <td>
                                 <?php echo esc_html( $ext ); ?>
