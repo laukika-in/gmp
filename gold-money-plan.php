@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Gold Money Plan
  * Description: Custom EMI-based investment plan using WooCommerce variable products.
- * Version: 2.0.0
+ * Version: 2.0.1
  * Author: Your Name
  * Text Domain: gmp
  */
