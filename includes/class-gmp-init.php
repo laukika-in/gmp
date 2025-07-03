@@ -54,7 +54,8 @@ class GMP_Init {
         exit;
     }
 
-        add_rewrite_endpoint( 'gmp-cycles', EP_ROOT | EP_PAGES );
+       add_rewrite_endpoint( 'gmp-cycles', EP_ROOT | EP_PAGES | EP_PERMALINK );
+
         flush_rewrite_rules();
     }, 11 );
   }
