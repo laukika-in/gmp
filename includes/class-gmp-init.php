@@ -38,20 +38,9 @@ class GMP_Init {
 
     public static function on_activate() {
         // ✅ Create tables
-        GMP_DB::create_tables();
-if ( isset($_GET['show_rules']) ) {
-        global $wp_rewrite;
-        echo '<pre>';
-        print_r( $wp_rewrite->wp_rewrite_rules() );
-        echo '</pre>';
-        exit;
-    }
-         add_rewrite_endpoint( 'gmp-cycles', EP_ROOT | EP_PAGES | EP_PERMALINK );
-
+        GMP_DB::create_tables(); 
     // Force one-time flush
     flush_rewrite_rules();
-
-    // Set option to skip next time
-    update_option( 'gmp_rewrite_flushed', true );
+ 
     }
 }

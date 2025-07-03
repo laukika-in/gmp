@@ -16,6 +16,6 @@ define( 'GMP_PLUGIN_VERSION', $plugin_data['Version'] );
 define( 'GMP_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'GMP_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
-require_once GMP_PLUGIN_DIR . 'includes/class-gmp-init.php';
+register_activation_hook( __FILE__, [ 'GMP_Init', 'on_activate' ] );
 
 add_action( 'plugins_loaded', [ 'GMP_Init', 'init' ] );
