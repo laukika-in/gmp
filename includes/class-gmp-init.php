@@ -1,6 +1,5 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) exit;
-echo "<h2>Debug: GMP Cycles View Loaded</h2>";
 
 class GMP_Init {
 
@@ -35,28 +34,14 @@ class GMP_Init {
 
         // Common Hooks
         GMP_Checkout_Hook::init();
-
-        // On plugin activation
-        register_activation_hook( GMP_PLUGIN_DIR . 'gold-money-plan.php', [ __CLASS__, 'on_activate' ] );
     }
 
     public static function on_activate() {
-    GMP_DB::create_tables();
+        // ✅ Create tables
+        GMP_DB::create_tables();
 
-    // Safely register endpoint before flush
-    add_action( 'init', function() {
-       global $wp_rewrite;
-
-    if ( isset($_GET['show_endpoints']) ) {
-        echo '<pre>';
-        print_r( $wp_rewrite->endpoints );
-        echo '</pre>';
-        exit;
-    }
-
-       add_rewrite_endpoint( 'gmp-cycles', EP_ROOT | EP_PAGES | EP_PERMALINK );
-
+        // ✅ Register endpoint and flush permalinks
+        add_rewrite_endpoint( 'gmp-cycles', EP_ROOT | EP_PAGES | EP_PERMALINK );
         flush_rewrite_rules();
-    }, 11 );
-  }
+    }
 }

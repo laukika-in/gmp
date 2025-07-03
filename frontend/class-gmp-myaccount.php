@@ -4,19 +4,13 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 class GMP_MyAccount {
 
     public static function init() {
-        // Delay endpoint registration until rewrite system is available
-        //add_action( 'init', [ __CLASS__, 'add_account_endpoint' ] );
+        // Register endpoint after WordPress loads
+        add_action( 'init', [ __CLASS__, 'add_account_endpoint' ] );
 
-        // Account menu item
         add_filter( 'woocommerce_account_menu_items', [ __CLASS__, 'add_menu_item' ] );
-
-        // Content rendering for the endpoint
         add_action( 'woocommerce_account_gmp-cycles_endpoint', [ __CLASS__, 'render_cycle_list' ] );
 
-        // Frontend assets
         add_action( 'wp_enqueue_scripts', [ __CLASS__, 'enqueue_assets' ] );
-
-        
     }
 
     public static function add_account_endpoint() {
@@ -29,6 +23,7 @@ class GMP_MyAccount {
     }
 
     public static function render_cycle_list() {
+        echo '<div style="padding:1em;background:#fff3cd;color:#856404;border:1px solid #ffeeba;">[Debug] Rendered gmp-cycles endpoint</div>';
         include GMP_PLUGIN_DIR . 'views/front-cycle-list.php';
     }
 
