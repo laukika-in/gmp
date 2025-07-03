@@ -17,9 +17,11 @@ class GMP_Init {
             require_once GMP_PLUGIN_DIR . 'admin/class-gmp-admin-menu.php';
             require_once GMP_PLUGIN_DIR . 'admin/class-gmp-admin-list.php';
             require_once GMP_PLUGIN_DIR . 'admin/class-gmp-admin-detail.php';
+require_once GMP_PLUGIN_DIR . 'includes/class-gmp-product-meta.php';
 
             GMP_Admin_Assets::init();
             GMP_Admin_Menu::init();
+            GMP_Product_Meta::init();
         }
 
         // Frontend
