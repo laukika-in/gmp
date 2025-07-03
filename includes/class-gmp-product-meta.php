@@ -4,8 +4,8 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 class GMP_Product_Meta {
 
     public static function init() {
-        add_action( 'woocommerce_product_data_panels', [ __CLASS__, 'render_panel' ] );
         add_action( 'woocommerce_product_data_tabs', [ __CLASS__, 'add_tab' ] );
+        add_action( 'woocommerce_product_data_panels', [ __CLASS__, 'render_panel' ] );
         add_action( 'woocommerce_process_product_meta', [ __CLASS__, 'save_fields' ] );
     }
 
@@ -32,46 +32,44 @@ class GMP_Product_Meta {
             <div class="options_group">
                 <?php
                 woocommerce_wp_text_input([
-                    'id' => '_gmp_lock_months',
-                    'label' => 'Lock Period (months)',
-                    'type' => 'number',
-                    'desc_tip' => true,
-                    'description' => 'Number of months in lock period with base interest.',
-                    'value' => $lock_months,
+                    'id'          => '_gmp_lock_months',
+                    'label'       => 'Lock Period (months)',
+                    'type'        => 'number',
+                    'desc_tip'    => true,
+                    'description' => 'Number of months before extension period begins.',
+                    'value'       => $lock_months,
                     'custom_attributes' => [ 'min' => 0 ],
                 ]);
 
                 woocommerce_wp_text_input([
-                    'id' => '_gmp_extension_months',
-                    'label' => 'Extension Period (months)',
-                    'type' => 'number',
-                    'desc_tip' => true,
-                    'description' => 'Number of months after lock period with different interest.',
-                    'value' => $extension_months,
+                    'id'          => '_gmp_extension_months',
+                    'label'       => 'Extension Period (months)',
+                    'type'        => 'number',
+                    'desc_tip'    => true,
+                    'description' => 'Number of months allowed in extension period.',
+                    'value'       => $extension_months,
                     'custom_attributes' => [ 'min' => 0 ],
                 ]);
 
                 woocommerce_wp_text_input([
-                    'id' => '_gmp_base_interest',
-                    'label' => 'Base Interest (%)',
-                    'type' => 'number',
-                    'desc_tip' => true,
-                    'description' => 'Base interest rate during lock period.',
-                    'value' => $base_interest,
+                    'id'          => '_gmp_base_interest',
+                    'label'       => 'Base Interest (%)',
+                    'type'        => 'number',
+                    'desc_tip'    => true,
+                    'description' => 'Interest rate during lock period.',
+                    'value'       => $base_interest,
                     'custom_attributes' => [ 'min' => 0, 'step' => 0.01 ],
                 ]);
                 ?>
                 <p class="form-field">
-                    <label>Extension Interest per Month (%)</label>
-                    <span id="gmp-extension-interest-fields">
-                        <?php
-                        $ext_months = intval( $extension_months );
-                        for ( $i = 1; $i <= $ext_months; $i++ ) {
-                            $val = isset( $extension_interest[$i] ) ? esc_attr( $extension_interest[$i] ) : '';
-                            echo "<input type='number' step='0.01' min='0' name='_gmp_extension_interest[$i]' placeholder='Month $i' value='$val' style='width:80px; margin-right:5px;' />";
-                        }
-                        ?>
-                    </span>
+                    <label><strong>Extension Interest per Month (%)</strong></label><br />
+                    <?php
+                    $ext_months = intval( $extension_months );
+                    for ( $i = 1; $i <= $ext_months; $i++ ) {
+                        $val = isset( $extension_interest[$i] ) ? esc_attr( $extension_interest[$i] ) : '';
+                        echo "<label style='display:inline-block; width:80px;'>M{$i} <input type='number' step='0.01' min='0' name='_gmp_extension_interest[$i]' value='$val' style='width:60px; margin-left:3px;' /></label> ";
+                    }
+                    ?>
                 </p>
             </div>
         </div>
