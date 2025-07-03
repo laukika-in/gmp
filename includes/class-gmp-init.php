@@ -44,6 +44,14 @@ class GMP_Init {
 
     // Safely register endpoint before flush
     add_action( 'init', function() {
+        global $wp_rewrite;
+        if ( isset($_GET['debug_rewrites']) ) {
+            echo '<pre>';
+            print_r( $wp_rewrite->wp_rewrite_rules() );
+            echo '</pre>';
+            exit;
+        }
+
         add_rewrite_endpoint( 'gmp-cycles', EP_ROOT | EP_PAGES );
         flush_rewrite_rules();
     }, 11 );
