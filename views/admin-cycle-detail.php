@@ -26,7 +26,7 @@ echo '<p>Status: <strong>' . esc_html( ucfirst( $cycle->status ) ) . '</strong><
 echo '<table class="widefat"><thead><tr>
     <th>#</th><th>Due</th><th>EMI</th><th>Interest</th><th>Total</th><th>Status</th><th>Order</th>
 </tr></thead><tbody>';
-
+$total_paid = 0;
 foreach ( $installments as $ins ) {
     echo '<tr>';
     echo '<td>' . $ins->month_number . '</td>';
@@ -37,5 +37,11 @@ foreach ( $installments as $ins ) {
     echo '<td>' . ( $ins->is_paid ? 'Paid' : 'Pending' ) . '</td>';
     echo '<td>' . ( $ins->order_id ? '<a href="' . esc_url( get_edit_post_link( $ins->order_id ) ) . '">#' . $ins->order_id . '</a>' : '-' ) . '</td>';
     echo '</tr>';
+    
 }
-echo '</tbody></table></div>';
+echo '</tbody>';
+
+echo '<tfoot><tr>';
+echo '<td colspan="4"><strong>Total</strong></td>';
+echo '<td colspan="2"><strong>' . wc_price( $total_paid ) . '</strong></td>';
+echo '</tr></tfoot></div>';

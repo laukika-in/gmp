@@ -22,3 +22,4 @@ foreach ( $cycles as $cycle ) {
     echo '</tr>';
 }
 echo '</tbody></table></div>';
+   

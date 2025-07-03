@@ -11,6 +11,7 @@ $cycles_table = $wpdb->prefix . 'gmp_cycles';
 $cycles = $wpdb->get_results( $wpdb->prepare(
     "SELECT * FROM $cycles_table WHERE user_id = %d ORDER BY id DESC", $user_id
 ) );
+if ( ! isset( $_GET['view'] ) ) {
 
 echo '<h3>My EMI Cycles</h3>';
 if ( empty( $cycles ) ) {
@@ -35,10 +36,19 @@ foreach ( $cycles as $cycle ) {
     echo '<tr>';
    
     if ( $product ) {
-    $parent = wc_get_product( $product->get_parent_id() );
-    $link   = get_permalink( $product->get_parent_id() );
-    $label  = $product->get_formatted_name(); // Includes variation
-    echo '<td><a href="' . esc_url( $link ) . '">' . esc_html( $label ) . '</a></td>';
+   $parent     = wc_get_product( $product->get_parent_id() );
+$parent_name = $parent ? $parent->get_name() : '';
+$variation_attrs = $product->get_attributes();
+$query_args = [];
+$label = $parent_name . ' - ' . $variation_attrs;
+foreach ( $variation_attrs as $attr_name => $attr_value ) {
+    $taxonomy = str_replace( 'attribute_', '', $attr_name );
+    $query_args[ 'attribute_' . sanitize_title( $taxonomy ) ] = $attr_value;
+}
+
+$link = add_query_arg( $query_args, get_permalink( $parent->get_id() ) );
+   echo '<td><a href="' . esc_url($link) . '">' . esc_html( $label ) . '</a></td>';
+
 } else {
     echo '<td>N/A</td>';
 }
@@ -50,7 +60,7 @@ foreach ( $cycles as $cycle ) {
     echo '</tr>';
 }
 echo '</tbody></table>';
-
+}
 if ( isset( $_GET['view'] ) ) {
     include GMP_PLUGIN_DIR . 'views/front-cycle-detail.php';
 }
