@@ -2,26 +2,42 @@
 /**
  * Plugin Name: Gold Money Plan
  * Description: A WooCommerce-integrated EMI saving and redemption system with interest tracking and purchase discount.
- * Version: 1.0.25
+ * Version: 1.0.26
  * Author: Your Name
  * Text Domain: gold-money-plan
  */
 
 if (!defined('ABSPATH')) {
     exit;
-}
+} 
 
-define('GMP_PLUGIN_PATH', plugin_dir_path(__FILE__));
-define('GMP_PLUGIN_URL', plugin_dir_url(__FILE__));
-define('GMP_VERSION', '1.0.08');
+// Define constants
+define( 'GMP_DIR', plugin_dir_path( __FILE__ ) );
+define( 'GMP_URL', plugin_dir_url( __FILE__ ) );
+define('GMP_VERSION', '1.0.26');  
+// Autoload core files
+require_once GMP_DIR . 'includes/class-gmp-init.php';
+require_once GMP_DIR . 'includes/class-gmp-product-fields.php';
+require_once GMP_DIR . 'includes/class-gmp-interest-settings.php';
+require_once GMP_DIR . 'includes/class-gmp-emi-tracker.php';
+require_once GMP_DIR . 'includes/class-gmp-order-handler.php';
+require_once GMP_DIR . 'includes/class-gmp-admin-ui.php';
+require_once GMP_DIR . 'includes/class-gmp-myaccount-ui.php';
+require_once GMP_DIR . 'includes/db-schema.php';
 
-// Autoload core classes
-require_once GMP_PLUGIN_PATH . 'includes/class-gmp-init.php'; 
-require_once GMP_PLUGIN_PATH . 'includes/class-gmp-woocommerce.php';
-require_once GMP_PLUGIN_PATH . 'includes/helper-functions.php';
-require_once GMP_PLUGIN_PATH . 'includes/class-gmp-settings.php';
-require_once GMP_PLUGIN_PATH . 'includes/class-gmp-renewal.php';
-require_once GMP_PLUGIN_PATH . 'includes/class-gmp-product-fields.php';
+// Initialize plugin
+GMP_Init::init();
+GMP_DB::create_table();
+GMP_Product_Fields::init();
+GMP_Interest_Settings::init();
+GMP_Order_Handler::init();
+
+add_action('wp_enqueue_scripts', function () {
+    wp_enqueue_style('gmp-style', plugins_url('assets/css/gmp-style.css', __FILE__));
+});
+
+add_action('admin_enqueue_scripts', function () {
+    wp_enqueue_style('gmp-admin-style', plugins_url('assets/css/gmp-style.css', __FILE__));
+});
+
  
-// Initialize
-add_action('plugins_loaded', ['GMP_Init', 'init']);

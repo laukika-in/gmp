@@ -1,24 +1,22 @@
-.gmp-dashboard {
-    background: #fff;
-    border: 1px solid #ddd;
-    padding: 20px;
-    margin-top: 20px;
-    border-radius: 8px;
+table.shop_table, table.widefat {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 20px;
 }
 
-.gmp-dashboard h2 {
-    margin-bottom: 15px;
+table.shop_table th, table.shop_table td,
+table.widefat th, table.widefat td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
 }
 
-.gmp-dashboard p {
-    margin: 5px 0;
+table.shop_table th, table.widefat th {
+    background-color: #f9f9f9;
 }
 
-#gmp-redeem-btn {
-    background: #2e7d32;
-    color: white;
+hr {
     border: none;
-    padding: 10px 20px;
-    cursor: pointer;
-    border-radius: 4px;
+    border-top: 1px solid #ddd;
+    margin: 30px 0;
 }
