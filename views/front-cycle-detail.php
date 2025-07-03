@@ -13,6 +13,32 @@ if ( ! $cycle ) {
     return;
 }
 
+$product     = wc_get_product( $cycle->variation_id );
+$parent      = wc_get_product( $product ? $product->get_parent_id() : 0 );
+$parent_name = $parent ? $parent->get_name() : '';
+
+$attributes = [];
+foreach ( $product->get_variation_attributes() as $key => $val ) {
+    $taxonomy = str_replace( 'attribute_', '', $key );
+    $term = get_term_by( 'slug', $val, $taxonomy );
+    $attributes[] = $term ? $term->name : ucfirst( $val );
+}
+$variation_label = implode( ', ', $attributes );
+$label = $parent_name . ( $variation_label ? ' - ' . $variation_label : '' );
+
+$link = add_query_arg( [
+    'add-to-cart' => $product->get_id(),
+] + $product->get_variation_attributes(), wc_get_checkout_url() );
+?>
+
+<h3>Product: <?php echo esc_html( $label ); ?></h3>
+<p>
+    <a href="<?php echo esc_url( $link ); ?>" class="button">Pay Now</a>
+</p>
+<?php
+
+
+
 $installments = $wpdb->get_results( $wpdb->prepare(
     "SELECT * FROM {$wpdb->prefix}gmp_installments WHERE cycle_id = %d ORDER BY month_number ASC",
     $cycle_id
@@ -48,4 +74,12 @@ echo '<tfoot><tr>';
 echo '<td colspan="4"><strong>Total Paid</strong></td>';
 echo '<td colspan="2"><strong>' . wc_price( $total_paid ) . '</strong></td>';
 echo '</tr></tfoot>';
-echo '</table></div>';
+echo '</table>';
+
+echo '<br><h4>Summary</h4>';
+echo '<table class="woocommerce-table shop_table"><thead><tr>
+    <th>Title</th><th>Total</th>
+</tr></thead><tbody>';
+
+echo '<tr><td>Total EMI Paid</td><td>' . wc_price( $total_paid ) . '</td></tr>';
+echo '</tbody></table>';

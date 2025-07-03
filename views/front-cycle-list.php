@@ -38,19 +38,15 @@ foreach ( $cycles as $cycle ) {
     if ( $product ) {
     $parent = wc_get_product( $product->get_parent_id() );
     $parent_name = $parent ? $parent->get_name() : '';
-
-    $variation_string = wc_get_formatted_variation( $product, true, false, true );
-    $label = $parent_name . ' - ' . $variation_string;
-
-    // Build variation URL
-    $variation_attrs = $product->get_attributes();
-    $query_args = [];
-    foreach ( $variation_attrs as $attr_name => $attr_value ) {
-        $taxonomy = str_replace( 'attribute_', '', $attr_name );
-        $query_args[ 'attribute_' . sanitize_title( $taxonomy ) ] = $attr_value;
-    }
-
-    $link = add_query_arg( $query_args, get_permalink( $parent->get_id() ) );
+$attributes = [];
+foreach ( $product->get_variation_attributes() as $key => $val ) {
+    $taxonomy = str_replace( 'attribute_', '', $key );
+    $term = get_term_by( 'slug', $val, $taxonomy );
+    $attributes[] = $term ? $term->name : ucfirst( $val );
+}
+$variation_label = implode( ', ', $attributes );
+$label = $parent_name . ( $variation_label ? ' - ' . $variation_label : '' );
+    $link = add_query_arg( $attributes, get_permalink( $parent->get_id() ) );
     echo '<td><a href="' . esc_url($link) . '">' . esc_html( $label ) . '</a></td>';
 } else {
     echo '<td>N/A</td>';
