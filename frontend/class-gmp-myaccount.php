@@ -15,6 +15,8 @@ class GMP_MyAccount {
 
         // Frontend assets
         add_action( 'wp_enqueue_scripts', [ __CLASS__, 'enqueue_assets' ] );
+
+        
     }
 
     public static function add_account_endpoint() {

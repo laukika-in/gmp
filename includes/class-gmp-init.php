@@ -40,7 +40,12 @@ class GMP_Init {
     }
 
     public static function on_activate() {
-        GMP_DB::create_tables();
-        flush_rewrite_rules(); // for My Account endpoint
-    }
+    GMP_DB::create_tables();
+
+    // Safely register endpoint before flush
+    add_action( 'init', function() {
+        add_rewrite_endpoint( 'gmp-cycles', EP_ROOT | EP_PAGES );
+        flush_rewrite_rules();
+    }, 11 );
+  }
 }
