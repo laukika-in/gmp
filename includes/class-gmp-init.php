@@ -20,6 +20,7 @@ class GMP_Init {
             require_once GMP_PLUGIN_DIR . 'admin/class-gmp-admin-detail.php';
             require_once GMP_PLUGIN_DIR . 'includes/class-gmp-product-meta.php';
             require_once GMP_PLUGIN_DIR . 'admin/class-gmp-settings-page.php';
+            
 
             GMP_Admin_Assets::init();
             GMP_Admin_Menu::init();
@@ -32,8 +33,13 @@ class GMP_Init {
         if ( ! is_admin() ) {
             require_once GMP_PLUGIN_DIR . 'frontend/class-gmp-myaccount.php';
             require_once GMP_PLUGIN_DIR . 'includes/class-gmp-cart-handler.php';
+            require_once GMP_PLUGIN_DIR . 'includes/class-gmp-pay-now-handler.php';
+
+
             GMP_MyAccount::init();
             GMP_Cart_Handler::init();
+            GMP_Pay_Now_Handler::init();
+
         }
 
         // Common Hooks

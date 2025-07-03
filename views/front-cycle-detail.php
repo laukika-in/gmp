@@ -26,9 +26,8 @@ foreach ( $product->get_variation_attributes() as $key => $val ) {
 $variation_label = implode( ', ', $attributes );
 $label = $parent_name . ( $variation_label ? ' - ' . $variation_label : '' );
 
-$link = add_query_arg( [
-    'add-to-cart' => $product->get_id(),
-] + $product->get_variation_attributes(), wc_get_checkout_url() );
+$link = add_query_arg( 'gmp_pay_now', $product->get_id(), home_url() );
+
 ?>
 
 <h3>Product: <?php echo esc_html( $label ); ?></h3>
