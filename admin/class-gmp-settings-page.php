@@ -28,10 +28,14 @@ class GMP_Settings_Page {
             'orderby'   => 'title',
             'order'     => 'ASC',
         ]);
-
         ?>
         <div class="wrap">
-            <h1>Gold Money Plan Settings</h1>
+            <h1>Gold Money Plan – Interest Settings</h1>
+
+            <?php if ( isset( $_GET['saved'] ) ): ?>
+                <div class="notice notice-success"><p>Settings updated successfully.</p></div>
+            <?php endif; ?>
+
             <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
                 <?php wp_nonce_field( 'gmp_save_settings' ); ?>
                 <input type="hidden" name="action" value="gmp_save_settings" />
@@ -39,11 +43,11 @@ class GMP_Settings_Page {
                 <table class="widefat fixed striped">
                     <thead>
                         <tr>
-                            <th>Product</th>
-                            <th>Lock Period (months)</th>
-                            <th>Extension Period (months)</th>
-                            <th>Base Interest (%)</th>
-                            <th>Extension Interest % (comma-separated)</th>
+                            <th style="width:200px;">Product</th>
+                            <th>Lock Period<br/>(months)</th>
+                            <th>Extension Period<br/>(months)</th>
+                            <th>Base Interest<br/>(%)</th>
+                            <th>Extension Interest per Month<br/>(%)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -53,26 +57,44 @@ class GMP_Settings_Page {
                         $ext  = get_post_meta( $pid, '_gmp_extension_months', true );
                         $base = get_post_meta( $pid, '_gmp_base_interest', true );
                         $ei   = get_post_meta( $pid, '_gmp_extension_interest', true );
-                        $ei   = is_array( $ei ) ? implode( ',', $ei ) : maybe_unserialize( $ei );
+                        $ei   = is_array( $ei ) ? $ei : maybe_unserialize( $ei );
                         ?>
                         <tr>
-                            <td><?php echo esc_html( $product->get_name() ); ?></td>
-                            <td><input type="number" name="lock[<?php echo $pid; ?>]" value="<?php echo esc_attr( $lock ); ?>" min="0" /></td>
-                            <td><input type="number" name="ext[<?php echo $pid; ?>]" value="<?php echo esc_attr( $ext ); ?>" min="0" /></td>
-                            <td><input type="number" step="0.01" name="base[<?php echo $pid; ?>]" value="<?php echo esc_attr( $base ); ?>" min="0" /></td>
-                            <td><input type="text" name="ei[<?php echo $pid; ?>]" value="<?php echo esc_attr( $ei ); ?>" placeholder="e.g. 10,12" /></td>
+                            <td><strong><?php echo esc_html( $product->get_name() ); ?></strong></td>
+                            <td>
+                                <input type="number" name="lock[<?php echo $pid; ?>]" value="<?php echo esc_attr( $lock ); ?>" min="0" />
+                            </td>
+                            <td>
+                                <input type="number" name="ext[<?php echo $pid; ?>]" value="<?php echo esc_attr( $ext ); ?>" min="0" />
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" name="base[<?php echo $pid; ?>]" value="<?php echo esc_attr( $base ); ?>" min="0" />
+                            </td>
+                            <td>
+                                <?php
+                                $ext_count = intval( $ext );
+                                for ( $i = 1; $i <= $ext_count; $i++ ) {
+                                    $val = isset( $ei[$i] ) ? esc_attr( $ei[$i] ) : '';
+                                    echo "<label style='display:inline-block; width:75px;'>M{$i}<input type='number' step='0.01' min='0' name='ei[{$pid}][{$i}]' value='{$val}' style='width:60px; margin-left:5px;' /></label> ";
+                                }
+                                ?>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>
                 </table>
 
-                <p><input type="submit" class="button-primary" value="Save Settings" /></p>
+                <p><input type="submit" class="button button-primary" value="Save Settings" /></p>
             </form>
         </div>
         <?php
     }
 
     public static function save_settings() {
+        if ( ! current_user_can( 'manage_woocommerce' ) ) {
+            wp_die( 'Not allowed' );
+        }
+
         check_admin_referer( 'gmp_save_settings' );
 
         $lock = $_POST['lock'] ?? [];
@@ -89,13 +111,14 @@ class GMP_Settings_Page {
         foreach ( $base as $pid => $val ) {
             update_post_meta( $pid, '_gmp_base_interest', floatval( $val ) );
         }
-        foreach ( $ei as $pid => $val ) {
-            $parts = array_map( 'floatval', array_filter( array_map( 'trim', explode( ',', $val ) ) ) );
-            $assoc = [];
-            foreach ( $parts as $i => $v ) {
-                $assoc[$i + 1] = $v;
+        foreach ( $ei as $pid => $month_vals ) {
+            if ( is_array( $month_vals ) ) {
+                $assoc = [];
+                foreach ( $month_vals as $month => $rate ) {
+                    $assoc[ absint($month) ] = floatval($rate);
+                }
+                update_post_meta( $pid, '_gmp_extension_interest', $assoc );
             }
-            update_post_meta( $pid, '_gmp_extension_interest', $assoc );
         }
 
         wp_redirect( admin_url( 'admin.php?page=gmp-settings&saved=1' ) );
