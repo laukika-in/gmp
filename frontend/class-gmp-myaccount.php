@@ -14,7 +14,8 @@ class GMP_MyAccount {
     }
 
     public static function add_account_endpoint() {
-        add_rewrite_endpoint( 'gmp-cycles', EP_ROOT | EP_PAGES );
+           add_rewrite_endpoint( 'gmp-cycles', EP_ROOT | EP_PAGES | EP_PERMALINK );
+
     }
 
     public static function add_menu_item( $items ) {
@@ -33,4 +34,5 @@ class GMP_MyAccount {
             wp_enqueue_script( 'gmp-style', GMP_PLUGIN_URL . 'assets/js/gmp-style.js', [ 'jquery' ], GMP_PLUGIN_VERSION, true );
         }
     }
+    
 }

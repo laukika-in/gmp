@@ -40,8 +40,12 @@ class GMP_Init {
         // ✅ Create tables
         GMP_DB::create_tables();
 
-        // ✅ Register endpoint and flush permalinks
-        add_rewrite_endpoint( 'gmp-cycles', EP_ROOT | EP_PAGES | EP_PERMALINK );
-        flush_rewrite_rules();
+         add_rewrite_endpoint( 'gmp-cycles', EP_ROOT | EP_PAGES | EP_PERMALINK );
+
+    // Force one-time flush
+    flush_rewrite_rules();
+
+    // Set option to skip next time
+    update_option( 'gmp_rewrite_flushed', true );
     }
 }
