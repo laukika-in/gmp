@@ -30,7 +30,13 @@ foreach ( $installments as $ins ) {
     echo '<td>' . wc_price( $ins->emi_amount ) . '</td>';
     echo '<td>' . $ins->interest_rate . '%</td>';
     echo '<td>' . wc_price( $ins->total_with_interest ) . '</td>';
-    echo '<td>' . ( $ins->is_paid ? 'Paid' : 'Pending' ) . '</td>';
+   if ( $ins->is_paid ) {
+    $order_link = $ins->order_id ? '<br><a href="' . esc_url( wc_get_endpoint_url( 'view-order', $ins->order_id, wc_get_page_permalink( 'myaccount' ) ) ) . '">View Order</a>' : '';
+    echo '<td>Paid' . $order_link . '</td>';
+} else {
+    echo '<td>Pending</td>';
+}
+
     echo '</tr>';
 }
 echo '</tbody></table>';

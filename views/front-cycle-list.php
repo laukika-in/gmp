@@ -29,10 +29,20 @@ echo '<thead><tr>
 
 foreach ( $cycles as $cycle ) {
     $product = wc_get_product( $cycle->variation_id );
-    $url = wc_get_account_endpoint_url( 'gmp-cycles' ) . '?view=' . $cycle->id;
+   $url = add_query_arg( 'cycle', $cycle->id, wc_get_account_endpoint_url( 'gold-money-plan' ) );
+
 
     echo '<tr>';
-    echo '<td>' . esc_html( $product ? $product->get_name() : 'N/A' ) . '</td>';
+   
+    if ( $product ) {
+    $parent = wc_get_product( $product->get_parent_id() );
+    $link   = get_permalink( $product->get_parent_id() );
+    $label  = $product->get_formatted_name(); // Includes variation
+    echo '<td><a href="' . esc_url( $link ) . '">' . esc_html( $label ) . '</a></td>';
+} else {
+    echo '<td>N/A</td>';
+}
+
     echo '<td>' . esc_html( $cycle->start_date ) . '</td>';
     echo '<td>' . esc_html( ucfirst( $cycle->status ) ) . '</td>';
     echo '<td>' . intval( $cycle->total_months ) . '</td>';
