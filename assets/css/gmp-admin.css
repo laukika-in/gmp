@@ -61,4 +61,55 @@
 }
 .gmp-toolbar {
   margin-bottom: 20px;
+} /* General Layout */
+.gmp-admin-wrap {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.gmp-two-col {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+}
+
+.gmp-two-col .gmp-col {
+  flex: 1;
+  min-width: 280px;
+}
+
+/* Thumbnail Styling */
+.gmp-thumb-admin img {
+  width: 100%;
+  max-width: 120px;
+  height: auto;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+
+/* Summary Table */
+.gmp-summary-table {
+  width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.gmp-summary-table th,
+.gmp-summary-table td {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+/* Action Buttons */
+.gmp-admin-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gmp-admin-actions .button {
+  width: fit-content;
 }
