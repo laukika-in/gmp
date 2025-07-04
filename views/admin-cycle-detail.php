@@ -112,8 +112,8 @@ echo '</div>';
 echo '<div class="gmp-col"><h3>Actions</h3>';
 echo '<div class="gmp-admin-actions">';
 if ($cycle->status === 'active') {
-    echo '<a href="#" class="button gmp-action-btn" data-cycle-id="' . esc_attr($cycle->id) . '" data-action="close">Mark as Closed</a><br><br>';
-    echo '<a href="#" class="button gmp-action-btn" data-cycle-id="' . esc_attr($cycle->id) . '" data-action="cancel">Cancel Cycle</a><br><br>';
+    echo '<a href="#" class="button gmp-action-btn" data-cycle-id="' . esc_attr($cycle->id) . '" data-action="close">Mark as Closed</a>';
+    echo '<a href="#" class="button gmp-action-btn" data-cycle-id="' . esc_attr($cycle->id) . '" data-action="cancel">Cancel Cycle</a>';
     echo '<a href="#" class="button gmp-action-btn" data-cycle-id="' . esc_attr($cycle->id) . '" data-action="stop">Stop Future EMIs</a>';
 } else {
     echo '<p><em>This cycle is not active. Actions unavailable.</em></p>';
