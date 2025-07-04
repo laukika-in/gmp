@@ -13,7 +13,7 @@ class GMP_Admin_Assets {
             wp_enqueue_script( 'gmp-admin-script', GMP_PLUGIN_URL . 'assets/js/gmp-admin.js', [ 'jquery' ], GMP_PLUGIN_VERSION, true );
 
             wp_localize_script( 'gmp-admin-script', 'GMP_Admin_Actions', [
-                'nonce' => wp_create_nonce( 'gmp_admin_cycle_action' )
+                'nonce' => wp_create_nonce( 'gmp_cycle_action' )
             ] );
         }
     }
