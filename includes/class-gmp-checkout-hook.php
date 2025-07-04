@@ -9,6 +9,9 @@ class GMP_Checkout_Hook {
 
         // Step 2: Process EMI tracking after order
         add_action( 'woocommerce_checkout_order_processed', [ __CLASS__, 'maybe_track_emi_purchase' ], 20, 1 );
+
+        add_filter( 'woocommerce_add_to_cart_validation', [ __CLASS__, 'block_add_to_cart_if_hold' ], 10, 6 );
+
     }
 
     // ✅ Block checkout if any GMP cycle is on hold
@@ -98,4 +101,31 @@ break;
             }
         }
     }
+    public static function block_add_to_cart_if_hold( $passed, $product_id, $quantity, $variation_id = 0, $variation = [], $cart_item_data = [] ) {
+    if ( ! is_user_logged_in() ) return $passed;
+
+    $variation_id = $variation_id ?: $product_id;
+
+    if ( ! GMP_Product_Helper::is_gmp_product( $product_id ) ) {
+        return $passed;
+    }
+
+    $user_id = get_current_user_id();
+    global $wpdb;
+
+    $cycle = $wpdb->get_row( $wpdb->prepare(
+        "SELECT * FROM {$wpdb->prefix}gmp_cycles
+         WHERE user_id = %d AND variation_id = %d AND status = 'hold'
+         ORDER BY id DESC LIMIT 1",
+        $user_id, $variation_id
+    ) );
+
+    if ( $cycle ) {
+        wc_add_notice( __( "You cannot repurchase this plan while it’s on hold. Please resume or close the plan first.", "gmp" ), 'error' );
+        return false;
+    }
+
+    return $passed;
+}
+
 }
