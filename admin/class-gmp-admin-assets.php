@@ -2,18 +2,26 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 class GMP_Admin_Assets {
+
     public static function init() {
-        add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue' ] );
+        add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_assets' ] );
     }
 
     public static function enqueue_assets( $hook ) {
-    if ( isset( $_GET['page'] ) && strpos( $_GET['page'], 'gmp' ) !== false ) {
-        $css_url = GMP_PLUGIN_URL . 'assets/css/gmp-admin.css';
-        error_log('GMP CSS: ' . $css_url); // Debug log
-        wp_enqueue_style( 'gmp-admin', $css_url, [], GMP_PLUGIN_VERSION );
-        wp_enqueue_script( 'gmp-admin', GMP_PLUGIN_URL . 'assets/js/gmp-admin.js', [ 'jquery' ], GMP_PLUGIN_VERSION, true );
+        if ( isset( $_GET['page'] ) && strpos( $_GET['page'], 'gmp' ) !== false ) {
+            wp_enqueue_style(
+                'gmp-admin',
+                GMP_PLUGIN_URL . 'assets/css/gmp-admin.css',
+                [],
+                GMP_PLUGIN_VERSION
+            );
+            wp_enqueue_script(
+                'gmp-admin',
+                GMP_PLUGIN_URL . 'assets/js/gmp-admin.js',
+                [ 'jquery' ],
+                GMP_PLUGIN_VERSION,
+                true
+            );
+        }
     }
 }
-
-}
-
