@@ -28,6 +28,14 @@ $edit_user_link = $user ? admin_url( 'user-edit.php?user_id=' . $user->ID ) : '#
 echo '<div class="wrap gmp-admin-wrap">';
 echo '<a href="' . admin_url( 'admin.php?page=gmp-cycles' ) . '" class="button">&larr; Back to List</a>';
 echo '<h2>Cycle #' . esc_html( $cycle->id ) . ' Details</h2>';
+$status_colors = [
+    'active' => '#ffc107',
+    'closed' => '#28a745',
+    'cancelled' => '#dc3545'
+];
+$color = $status_colors[ $cycle->status ] ?? '#6c757d';
+
+echo '<p><strong>Status:</strong> <span style="padding:4px 8px; border-radius:4px; background:' . esc_attr($color) . '; color:#fff;">' . ucfirst( $cycle->status ) . '</span></p>';
 
 // === Two Column Metaboxes ===
 echo '<div class="gmp-two-col">';
