@@ -67,12 +67,12 @@ if ( $product ) {
 $row_class = $cycle->status === 'closed' ? 'gmp-row-closed' : 'gmp-row-active';
 echo '<tr class="' . esc_attr( $row_class ) . '">';
 
-    echo '<td style="display:flex; align-items:center; gap:10px;">' . $thumb . '<a href="' . esc_url($product_url) . '">' . esc_html( $label ) . '</a></td>';
-    echo '<td>' . esc_html( $start ) . '</td>';
-    echo '<td>' . esc_html( $end ) . '</td>';
-    echo '<td>' . $status_badge . '</td>';
-    echo '<td>' . intval( $cycle->total_months ) . '</td>';
-echo '<td><a href="' . esc_url( $url ) . '" class="button button-small">View</a></td>';
+    echo '<td data-label="Product" style="display:flex; align-items:center; gap:10px;">' . $thumb . '<a href="' . esc_url($product_url) . '">' . esc_html( $label ) . '</a></td>';
+    echo '<td data-label="Start">' . esc_html( $start ) . '</td>';
+    echo '<td data-label="End">' . esc_html( $end ) . '</td>';
+    echo '<td data-label="Status">' . $status_badge . '</td>';
+    echo '<td data-label="Months">' . intval( $cycle->total_months ) . '</td>';
+echo '<td data-label="Action"><a href="' . esc_url( $url ) . '" class="button button-small">View</a></td>';
 
     echo '</tr>';
 } else {

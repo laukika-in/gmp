@@ -57,21 +57,21 @@ foreach ( $installments as $ins ) {
     $row_class = $is_paid ? 'style="background:#eaffea;"' : 'style="opacity:0.5;"';
 
     echo "<tr $row_class>";
-    echo '<td>' . $ins->month_number . '</td>';
-  echo '<td>' . date_i18n( 'j F Y', strtotime( $ins->due_date ) ) . '</td>';
+    echo '<td data-label="#">' . $ins->month_number . '</td>';
+  echo '<td data-label="Due Date">' . date_i18n( 'j F Y', strtotime( $ins->due_date ) ) . '</td>';
 
-    echo '<td>' . wc_price( $ins->emi_amount ) . '</td>';
-    echo '<td>' . $ins->interest_rate . '%</td>';
-    echo '<td>' . wc_price( $ins->total_with_interest ) . '</td>';
+    echo '<td data-label="EMI">' . wc_price( $ins->emi_amount ) . '</td>';
+    echo '<td data-label="Interest">' . $ins->interest_rate . '%</td>';
+    echo '<td data-label="Total">' . wc_price( $ins->total_with_interest ) . '</td>';
 
     if ( $is_paid ) {
         $order_link = $ins->order_id ? '<br><a href="' . esc_url( wc_get_endpoint_url( 'view-order', $ins->order_id, wc_get_page_permalink( 'myaccount' ) ) ) . '">View Order</a>' : '';
         $paid_on = $ins->paid_date ? date_i18n( 'j M Y', strtotime( $ins->paid_date ) ) : '—';
-        echo '<td>Paid' . $order_link . '</td>';
-        echo '<td>' . esc_html( $paid_on ) . '</td>';
+        echo '<td data-label="Status">Paid' . $order_link . '</td>';
+        echo '<td data-label="Payment Made On">' . esc_html( $paid_on ) . '</td>';
     } else {
-        echo '<td>Pending</td>';
-        echo '<td>—</td>';
+        echo '<td data-label="Status">Pending</td>';
+        echo '<td data-label="Status">—</td>';
     }
 
     echo '</tr>';

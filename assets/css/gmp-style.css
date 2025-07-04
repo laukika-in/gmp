@@ -49,3 +49,59 @@ table.shop_table {
   vertical-align: middle;
   padding: 10px 12px;
 }
+/* === Responsive Tables === */
+@media (max-width: 768px) {
+  .woocommerce-table.shop_table thead {
+    display: none;
+  }
+
+  .woocommerce-table.shop_table tr {
+    display: block;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .woocommerce-table.shop_table td {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    border: none;
+    border-bottom: 1px solid #eee;
+  }
+
+  .woocommerce-table.shop_table td:last-child {
+    border-bottom: none;
+  }
+
+  .woocommerce-table.shop_table td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    flex: 1;
+    color: #333;
+  }
+
+  /* EMI Header Image */
+  .gmp-cycle-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .gmp-cycle-header .gmp-thumb img {
+    width: 100%;
+    max-width: 100px;
+    height: auto;
+    margin-bottom: 10px;
+  }
+
+  .gmp-cycle-header .gmp-info h2 {
+    font-size: 18px;
+  }
+
+  .gmp-cycle-header .button {
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+  }
+}
