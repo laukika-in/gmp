@@ -21,3 +21,13 @@ table.shop_table {
 .gmp-cycle-table tbody tr[style*="opacity"] {
   color: #888;
 }
+.gmp-list-table th, .gmp-list-table td {
+    vertical-align: middle;
+}
+.gmp-list-table td img {
+    border: 1px solid #eee;
+}
+.woocommerce .button {
+    padding: 6px 12px;
+    font-size: 13px;
+}

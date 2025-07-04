@@ -58,7 +58,8 @@ foreach ( $installments as $ins ) {
 
     echo "<tr $row_class>";
     echo '<td>' . $ins->month_number . '</td>';
-    echo '<td>' . esc_html( $ins->due_date ) . '</td>';
+  echo '<td>' . date_i18n( 'j F Y', strtotime( $ins->due_date ) ) . '</td>';
+
     echo '<td>' . wc_price( $ins->emi_amount ) . '</td>';
     echo '<td>' . $ins->interest_rate . '%</td>';
     echo '<td>' . wc_price( $ins->total_with_interest ) . '</td>';
