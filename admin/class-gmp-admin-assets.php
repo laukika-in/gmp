@@ -6,11 +6,14 @@ class GMP_Admin_Assets {
         add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue' ] );
     }
 
-    public static function enqueue( $hook ) {
-        // Load CSS only for GMP pages
-        if ( isset($_GET['page']) && strpos($_GET['page'], 'gmp-cycle') === 0 ) {
-            wp_enqueue_style( 'gmp-admin', GMP_PLUGIN_URL . 'assets/css/gmp-admin.css', [], GMP_PLUGIN_VERSION );
-        }
+    public static function enqueue_assets( $hook ) {
+    if ( isset( $_GET['page'] ) && strpos( $_GET['page'], 'gmp' ) !== false ) {
+        $css_url = GMP_PLUGIN_URL . 'assets/css/gmp-admin.css';
+        error_log('GMP CSS: ' . $css_url); // Debug log
+        wp_enqueue_style( 'gmp-admin', $css_url, [], GMP_PLUGIN_VERSION );
+        wp_enqueue_script( 'gmp-admin', GMP_PLUGIN_URL . 'assets/js/gmp-admin.js', [ 'jquery' ], GMP_PLUGIN_VERSION, true );
     }
+}
+
 }
 
