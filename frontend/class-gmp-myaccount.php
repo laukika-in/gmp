@@ -10,7 +10,8 @@ class GMP_MyAccount {
 
     // ✅ Enqueue CSS/JS only when shortcode is used
     public static function enqueue_assets() {
-        if ( is_user_logged_in() && is_account_page() && has_shortcode( get_post()->post_content, 'gmp_emi_cycles' ) ) {
+            if ( is_account_page() && is_user_logged_in() ) {
+
             wp_enqueue_style( 'gmp-style', GMP_PLUGIN_URL . 'assets/css/gmp-style.css', [], GMP_PLUGIN_VERSION );
             wp_enqueue_script( 'gmp-style', GMP_PLUGIN_URL . 'assets/js/gmp-style.js', [ 'jquery' ], GMP_PLUGIN_VERSION, true );
         }

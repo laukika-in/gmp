@@ -75,6 +75,12 @@ table.shop_table {
   font-size: 13px;
   padding: 6px 12px;
 }
+.gmp-product-flex {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+}
 /* === Responsive Tables === */
 @media (max-width: 768px) {
   .woocommerce-table.shop_table thead {
@@ -170,12 +176,7 @@ table.shop_table {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
-  .gmp-product-flex {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: nowrap;
-  }
+
   .gmp-table-scroll table {
     min-width: 600px; /* adjust based on expected columns */
     width: 100%;
