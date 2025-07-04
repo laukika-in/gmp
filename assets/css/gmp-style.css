@@ -165,4 +165,20 @@ table.shop_table {
   .woocommerce-table td:last-child {
     border-bottom: none;
   }
+  .gmp-table-scroll {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .gmp-product-flex {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
+  }
+  .gmp-table-scroll table {
+    min-width: 600px; /* adjust based on expected columns */
+    width: 100%;
+    border-collapse: collapse;
+  }
 }

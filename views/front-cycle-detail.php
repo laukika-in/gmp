@@ -35,7 +35,7 @@ $thumb = $parent ? $parent->get_image( 'thumbnail' ) : '';
 $link = add_query_arg( 'gmp_pay_now', $product->get_id(), home_url() );
 
 // === Product header section ===
-echo '<div class="gmp-cycle-header" style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">';
+echo '<div class="gmp-cycle-header gmp-table-scroll" style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">';
 echo '<div class="gmp-thumb">' . $thumb . '</div>';
 echo '<div class="gmp-info">';
 echo '<h2 style="margin-bottom:5px;">' . esc_html( $label ) . '</h2>';
