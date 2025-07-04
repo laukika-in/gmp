@@ -81,6 +81,38 @@ table.shop_table {
   gap: 10px;
   flex-wrap: nowrap;
 }
+.badge-active {
+  background: #d1ecf1;
+  color: #0c5460;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.badge-closed {
+  background: #d4edda;
+  color: #155724;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.badge-hold {
+  background: #fff3cd;
+  color: #856404;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.badge-cancelled {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
 /* === Responsive Tables === */
 @media (max-width: 768px) {
   .woocommerce-table.shop_table thead {

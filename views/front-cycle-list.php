@@ -36,16 +36,13 @@ $start   = date_i18n( 'j M Y', strtotime( $cycle->start_date ) );
 $end     = date_i18n( 'j M Y', strtotime( "+".($cycle->total_months - 1)." months", strtotime( $cycle->start_date ) ) );
 $url = add_query_arg( 'view', $cycle->id, wc_get_account_endpoint_url( 'gold-money-plan' ) );
 
-switch ( $cycle->status ) {
-    case 'closed':
-        $status_badge = '<span style="background:#d4edda; color:#155724; padding:3px 8px; border-radius:4px;">Closed</span>';
-        break;
-    case 'cancelled':
-        $status_badge = '<span style="background:#f8d7da; color:#721c24; padding:3px 8px; border-radius:4px;">Cancelled</span>';
-        break;
-    default:
-        $status_badge = '<span style="background:#fff3cd; color:#856404; padding:3px 8px; border-radius:4px;">Active</span>';
-}
+$status_badge = match ($cycle->status) {
+    'active' => '<span class="badge-active">Active</span>',
+    'closed' => '<span class="badge-closed">Closed</span>',
+    'hold' => '<span class="badge-hold">On Hold</span>',
+    'cancelled' => '<span class="badge-cancelled">Cancelled</span>',
+    default => '<span>' . ucfirst($cycle->status) . '</span>',
+};
 
 
 if ( $product ) {

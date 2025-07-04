@@ -43,8 +43,9 @@ echo '<p style="margin:0;"><strong>Status:</strong> ' . ucfirst( $cycle->status 
 if ( $cycle->status === 'active' ) {
     echo '<p style="margin-top:10px;"><a href="' . esc_url( $link ) . '" class="button">Pay Now</a></p>';
 } elseif ( $cycle->status === 'hold' ) {
-    echo '<p><strong>Note:</strong> This cycle is on hold. Payments are currently paused.</p>';
+    echo '<p style="margin-top:10px;"><em>This cycle is currently on hold. Future payments are paused.</em></p>';
 }
+
 echo '</div>';
 echo '</div>';
 

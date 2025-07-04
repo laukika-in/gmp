@@ -37,7 +37,15 @@ foreach ( $cycles as $cycle ) {
     echo '<small>' . esc_html($variation) . '</small></div>';
     echo '</div></td>';
     echo '<td>' . date_i18n( 'j M Y', strtotime($cycle->start_date) ) . '</td>';
-    echo '<td><span class="gmp-status gmp-status-' . esc_attr(strtolower($status)) . '">' . esc_html($status) . '</span></td>';
+$status_badge = match ($cycle->status) {
+    'active' => '<span class="badge-active">Active</span>',
+    'closed' => '<span class="badge-closed">Closed</span>',
+    'hold' => '<span class="badge-hold">On Hold</span>',
+    'cancelled' => '<span class="badge-cancelled">Cancelled</span>',
+    default => '<span>' . ucfirst($cycle->status) . '</span>',
+};
+echo '<td>' . $status_badge . '</td>';
+
     echo '<td><a href="' . esc_url($url) . '" class="button button-small">View</a></td>';
     echo '</tr>';
 }

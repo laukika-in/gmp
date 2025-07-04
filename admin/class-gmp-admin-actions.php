@@ -33,9 +33,14 @@ class GMP_Admin_Actions {
             $wpdb->delete($installments_table, ['cycle_id' => $cycle_id, 'is_paid' => 0]);
             break;
 
-        case 'stop':
-            $wpdb->delete($installments_table, ['cycle_id' => $cycle_id, 'is_paid' => 0]);
-            break;
+        case 'hold':
+    $wpdb->update($table, ['status' => 'hold'], ['id' => $cycle_id]);
+    break;
+
+case 'resume':
+    $wpdb->update($table, ['status' => 'active'], ['id' => $cycle_id]);
+    break;
+
 
         default:
             wp_send_json_error(['message' => 'Invalid action.']);
