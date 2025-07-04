@@ -64,7 +64,9 @@ if ( $product ) {
     }
     $product_url = add_query_arg( $query_args, get_permalink( $parent->get_id() ) );
 
-    echo '<tr>';
+$row_class = $cycle->status === 'closed' ? 'gmp-row-closed' : 'gmp-row-active';
+echo '<tr class="' . esc_attr( $row_class ) . '">';
+
     echo '<td style="display:flex; align-items:center; gap:10px;">' . $thumb . '<a href="' . esc_url($product_url) . '">' . esc_html( $label ) . '</a></td>';
     echo '<td>' . esc_html( $start ) . '</td>';
     echo '<td>' . esc_html( $end ) . '</td>';
