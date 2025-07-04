@@ -113,3 +113,7 @@
 .gmp-admin-actions .button {
   width: fit-content;
 }
+.gmp-admin-actions .button {
+    margin-bottom: 8px;
+    width: 160px;
+}
