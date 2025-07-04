@@ -36,7 +36,8 @@ echo '</div>';
 echo '<div class="gmp-col"><h3>Product Details</h3>';
 echo $thumb;
 echo '<p><strong>' . esc_html( $parent->get_name() ) . '</strong></p>';
-echo '<p>' . esc_html( $price ) . '</p>';
+echo '<p>' . wc_price( $product->get_price() ) . '</p>';
+
 echo '</div>';
 echo '</div>';
 
