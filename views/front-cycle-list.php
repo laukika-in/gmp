@@ -34,6 +34,7 @@ foreach ( $cycles as $cycle ) {
 $product = wc_get_product( $cycle->variation_id );
 $start   = date_i18n( 'j M Y', strtotime( $cycle->start_date ) );
 $end     = date_i18n( 'j M Y', strtotime( "+".($cycle->total_months - 1)." months", strtotime( $cycle->start_date ) ) );
+$url = add_query_arg( 'view', $cycle->id, wc_get_account_endpoint_url( 'gold-money-plan' ) );
 
 $status_badge = $cycle->status === 'closed' 
     ? '<span style="background:#d4edda; color:#155724; padding:3px 8px; border-radius:4px;">Closed</span>'
@@ -69,7 +70,8 @@ if ( $product ) {
     echo '<td>' . esc_html( $end ) . '</td>';
     echo '<td>' . $status_badge . '</td>';
     echo '<td>' . intval( $cycle->total_months ) . '</td>';
-    echo '<td><a href="' . esc_url( $url ) . '" class="button">View</a></td>';
+echo '<td><a href="' . esc_url( $url ) . '" class="button button-small">View</a></td>';
+
     echo '</tr>';
 } else {
     echo '<tr><td colspan="6">Invalid product</td></tr>';
