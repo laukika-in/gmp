@@ -16,33 +16,58 @@ $installments = $wpdb->get_results( $wpdb->prepare(
     "SELECT * FROM {$wpdb->prefix}gmp_installments WHERE cycle_id = %d ORDER BY month_number ASC", $cycle_id
 ) );
 
-$user = get_userdata( $cycle->user_id );
+$user    = get_userdata( $cycle->user_id );
 $product = wc_get_product( $cycle->variation_id );
-$parent = wc_get_product( $product ? $product->get_parent_id() : 0 );
-$thumb = $parent ? $parent->get_image( 'woocommerce_thumbnail', ['class' => 'gmp-thumb-admin'] ) : '';
-$price = $product ? wc_price( $product->get_price() ) : '';
+$parent  = wc_get_product( $product ? $product->get_parent_id() : 0 );
+
+$thumb  = $parent ? $parent->get_image( 'woocommerce_thumbnail', ['class' => 'gmp-thumb-admin'] ) : '';
+$price  = $product ? wc_price( $product->get_price() ) : '';
+$edit_product_link = $product ? get_edit_post_link( $product->get_id() ) : '#';
+$edit_user_link = $user ? admin_url( 'user-edit.php?user_id=' . $user->ID ) : '#';
 
 echo '<div class="wrap gmp-admin-wrap">';
 echo '<a href="' . admin_url( 'admin.php?page=gmp-cycles' ) . '" class="button">&larr; Back to List</a>';
 echo '<h2>Cycle #' . esc_html( $cycle->id ) . ' Details</h2>';
 
+// === Two Column Metaboxes ===
 echo '<div class="gmp-two-col">';
+
+// User box
 echo '<div class="gmp-col"><h3>User Details</h3>';
-echo '<p><strong>Name:</strong> ' . esc_html( $user->display_name ) . '</p>';
-echo '<p><strong>Email:</strong> ' . esc_html( $user->user_email ) . '</p>';
-echo '<p><strong>User ID:</strong> ' . esc_html( $user->ID ) . '</p>';
+if ( $user ) {
+    echo '<p><strong>Name:</strong> <a href="' . esc_url( $edit_user_link ) . '" target="_blank">' . esc_html( $user->display_name ) . '</a></p>';
+    echo '<p><strong>Email:</strong> <a href="mailto:' . esc_attr( $user->user_email ) . '">' . esc_html( $user->user_email ) . '</a></p>';
+    echo '<p><strong>User ID:</strong> ' . esc_html( $user->ID ) . '</p>';
+} else {
+    echo '<p>User not found</p>';
+}
 echo '</div>';
 
+// Product box
 echo '<div class="gmp-col"><h3>Product Details</h3>';
+echo '<div class="gmp-product-info">';
 echo $thumb;
-echo '<p><strong>' . esc_html( $parent->get_name() ) . '</strong></p>';
-echo '<p>' . wc_price( $product->get_price() ) . '</p>';
+echo '<div>';
+echo '<p><a href="' . esc_url( $edit_product_link ) . '" target="_blank"><strong>' . esc_html( $parent ? $parent->get_name() : 'N/A' ) . '</strong></a></p>';
 
-echo '</div>';
+if ( $product ) {
+    $attrs = [];
+    foreach ( $product->get_variation_attributes() as $key => $val ) {
+        $taxonomy = str_replace( 'attribute_', '', $key );
+        $term = get_term_by( 'slug', $val, $taxonomy );
+        $attrs[] = $term ? $term->name : ucfirst( $val );
+    }
+    echo '<p><small>' . esc_html( implode( ', ', $attrs ) ) . '</small></p>';
+    echo '<p>' . $price . '</p>';
+}
+echo '</div></div>';
 echo '</div>';
 
+echo '</div>'; // gmp-two-col
+
+// === Installments Table ===
 echo '<br><table class="widefat"><thead><tr>
-    <th>#</th><th>Due</th><th>EMI</th><th>Interest</th><th>Total</th><th>Status</th><th>Paid On</th><th>Order</th>
+    <th style="width:50px;">#</th><th>Due</th><th>EMI</th><th>Interest</th><th>Total</th><th>Status</th><th>Paid On</th><th>Order</th>
 </tr></thead><tbody>';
 
 foreach ( $installments as $ins ) {
@@ -59,7 +84,7 @@ foreach ( $installments as $ins ) {
 }
 echo '</tbody></table>';
 
-// Summary Block
+// === Summary + Actions ===
 $total_emi = $total_interest = 0;
 foreach ( $installments as $ins ) {
     if ( $ins->is_paid ) {
@@ -71,9 +96,10 @@ $total_received = $total_emi + $total_interest;
 $start = date_i18n( 'j M Y', strtotime( $cycle->start_date ) );
 $end = date_i18n( 'j M Y', strtotime( "+".($cycle->total_months - 1)." months", strtotime( $cycle->start_date ) ) );
 
-echo '<div class="gmp-two-col">';
-echo '<div class="gmp-col">';
-echo '<h3>Summary</h3>';
+echo '<div class="gmp-two-col" style="margin-top:30px;">';
+
+// Summary
+echo '<div class="gmp-col"><h3>Summary</h3>';
 echo '<table class="gmp-summary-table"><tbody>';
 echo '<tr><td>Total EMI Paid</td><td>' . wc_price( $total_emi ) . '</td></tr>';
 echo '<tr><td>Total Interest</td><td>' . wc_price( $total_interest ) . '</td></tr>';
@@ -82,15 +108,14 @@ echo '<tr><td>Duration</td><td>' . esc_html( $start . ' - ' . $end ) . '</td></t
 echo '</tbody></table>';
 echo '</div>';
 
-echo '<div class="gmp-col">';
-echo '<h3>Actions</h3>';
+// Actions
+echo '<div class="gmp-col"><h3>Actions</h3>';
 echo '<div class="gmp-admin-actions">';
 echo '<a href="#" class="button gmp-action-btn" data-cycle-id="' . esc_attr($cycle->id) . '" data-action="close">Mark as Closed</a><br><br>';
 echo '<a href="#" class="button gmp-action-btn" data-cycle-id="' . esc_attr($cycle->id) . '" data-action="cancel">Cancel Cycle</a><br><br>';
 echo '<a href="#" class="button gmp-action-btn" data-cycle-id="' . esc_attr($cycle->id) . '" data-action="stop">Stop Future EMIs</a>';
+echo '</div></div>';
 
-echo '</div>';
-echo '</div>';
-echo '</div>';
+echo '</div>'; // gmp-two-col
 
-echo '</div>';
+echo '</div>'; // wrap

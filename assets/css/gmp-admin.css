@@ -114,6 +114,16 @@
   width: fit-content;
 }
 .gmp-admin-actions .button {
-    margin-bottom: 8px;
-    width: 160px;
+  margin-bottom: 8px;
+  width: 160px;
+}
+.gmp-product-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.gmp-product-info .gmp-thumb img {
+  width: 60px;
+  height: auto;
+  border-radius: 6px;
 }
