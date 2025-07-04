@@ -36,3 +36,29 @@
   vertical-align: middle;
   padding: 10px;
 }
+
+.gmp-meta-section {
+  display: flex;
+  gap: 40px;
+  margin: 20px 0;
+}
+.gmp-col {
+  flex: 1;
+  background: #fff;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+.gmp-col img {
+  max-width: 60px;
+  height: auto;
+  border-radius: 4px;
+}
+.gmp-summary-actions {
+  display: flex;
+  gap: 30px;
+  margin-top: 30px;
+}
+.gmp-toolbar {
+  margin-bottom: 20px;
+}
