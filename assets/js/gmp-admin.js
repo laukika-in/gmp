@@ -1,28 +1,29 @@
-jQuery(document).ready(function($) {
-    $('.gmp-action-btn').on('click', function(e) {
+jQuery(document).ready(function ($) {
+    $('.gmp-action-btn').on('click', function (e) {
         e.preventDefault();
+        let $btn = $(this);
+        let action = $btn.data('action');
+        let cycleId = $btn.data('cycle-id');
 
-        var cycleId = $(this).data('cycle-id');
-        var actionType = $(this).data('action');
-        var messages = {
-            close: 'Marking the cycle as closed means no further EMIs are expected.',
-            cancel: 'Cancelling will mark the entire cycle as cancelled. This cannot be undone.',
-            stop: 'Stopping future EMIs will prevent upcoming EMIs from being created. Already due EMIs remain.'
+        let messages = {
+            close: "Are you sure you want to mark this cycle as CLOSED?\n\nYES: Cycle will be closed.\nNO: Nothing will happen.",
+            cancel: "Are you sure you want to CANCEL this cycle?\n\nYES: All future EMIs will be removed and cycle marked as cancelled.\nNO: Nothing will happen.",
+            stop: "Are you sure you want to STOP future EMIs?\n\nYES: Upcoming EMIs will be removed, past payments retained.\nNO: Nothing will happen."
         };
 
-        if (!confirm(messages[actionType] + '\n\nAre you sure?')) return;
+        if (!confirm(messages[action])) return;
 
         $.post(ajaxurl, {
-            action: 'gmp_admin_cycle_action',
+            action: 'gmp_cycle_action',
             cycle_id: cycleId,
-            cycle_action: actionType,
-            _wpnonce: GMP_Admin_Actions.nonce
-        }, function(response) {
-            if (response.success) {
-                alert('Action completed: ' + response.data.message);
+            type: action,
+            _wpnonce: gmp_admin.nonce
+        }, function (resp) {
+            if (resp.success) {
+                alert(resp.data.message);
                 location.reload();
             } else {
-                alert('Failed: ' + response.data.message);
+                alert("Error: " + resp.data.message);
             }
         });
     });
