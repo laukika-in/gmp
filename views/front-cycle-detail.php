@@ -48,7 +48,8 @@ echo '</div>';
 
 // === Installment table ===
 echo '<h4>EMI Installments for Cycle #' . esc_html( $cycle->id ) . '</h4>';
-echo '<table class="woocommerce-table shop_table gmp-cycle-table"><thead><tr>
+echo '<div class="gmp-cycle-wrapper row">
+  <div class="col small-12 large-12"><table class="woocommerce-table gmp-detail-table ux-table table"><thead><tr>
     <th>#</th><th>Due Date</th><th>EMI</th><th>Interest</th><th>Total</th><th>Status</th><th>Payment Made On</th>
 </tr></thead><tbody>';
 
@@ -76,7 +77,8 @@ foreach ( $installments as $ins ) {
 
     echo '</tr>';
 }
-echo '</tbody></table>';
+echo '</tbody></table>  </div>
+</div>';
 
 // === Summary block ===
 $total_emi = 0;

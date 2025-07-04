@@ -19,7 +19,7 @@ if ( empty( $cycles ) ) {
     return;
 }
 
-echo '<table class="woocommerce-table shop_table gmp-list-table">';
+echo '<table class="woocommerce-table gmp-list-table ux-table table table-striped table-hover">';
 echo '<thead><tr>
     <th>Product</th>
     <th>Start</th>
@@ -68,13 +68,14 @@ if ( $product ) {
 $row_class = $cycle->status === 'closed' ? 'gmp-row-closed' : 'gmp-row-active';
 echo '<tr class="' . esc_attr( $row_class ) . '">';
 
-   echo '<td data-label="Product" style="white-space: normal;">';
-echo '<div style="display: flex; align-items: center; gap: 10px;">';
+echo '<td data-label="Product">';
+echo '<div class="gmp-product-flex" style="display:flex; align-items:center; gap:10px;">';
 echo $thumb;
-echo '<div style="line-height: 1.2;">';
-echo '<a href="' . esc_url($product_url) . '" style="font-weight: bold;">' . esc_html( $parent_name ) . '</a><br>';
+echo '<div style="line-height:1.4;">';
+echo '<a href="' . esc_url($product_url) . '" style="font-weight:bold;">' . esc_html( $parent_name ) . '</a><br>';
 echo '<small style="color:#666;">' . esc_html( $variation_label ) . '</small>';
 echo '</div></div></td>';
+
 
     echo '<td data-label="Start">' . esc_html( $start ) . '</td>';
     echo '<td data-label="End">' . esc_html( $end ) . '</td>';
