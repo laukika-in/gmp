@@ -53,7 +53,8 @@ if ( $product ) {
     $variation_label = implode( ', ', $attributes );
     $label = $parent_name . ( $variation_label ? ' - ' . $variation_label : '' );
 
-    $thumb = $parent ? $parent->get_image( 'thumbnail', [ 'style' => 'width:40px; height:auto; border-radius:4px;' ] ) : '';
+   $thumb = $parent ? $parent->get_image( 'woocommerce_thumbnail', [ 'style' => 'width: 40px; height: auto; border-radius: 4px;' ] ) : '';
+
 
     // URL with variation preselected
     $variation_attrs = $product->get_attributes();
@@ -67,7 +68,14 @@ if ( $product ) {
 $row_class = $cycle->status === 'closed' ? 'gmp-row-closed' : 'gmp-row-active';
 echo '<tr class="' . esc_attr( $row_class ) . '">';
 
-    echo '<td data-label="Product" style="display:flex; align-items:center; gap:10px;">' . $thumb . '<a href="' . esc_url($product_url) . '">' . esc_html( $label ) . '</a></td>';
+   echo '<td data-label="Product" style="white-space: normal;">';
+echo '<div style="display: flex; align-items: center; gap: 10px;">';
+echo $thumb;
+echo '<div style="line-height: 1.2;">';
+echo '<a href="' . esc_url($product_url) . '" style="font-weight: bold;">' . esc_html( $parent_name ) . '</a><br>';
+echo '<small style="color:#666;">' . esc_html( $variation_label ) . '</small>';
+echo '</div></div></td>';
+
     echo '<td data-label="Start">' . esc_html( $start ) . '</td>';
     echo '<td data-label="End">' . esc_html( $end ) . '</td>';
     echo '<td data-label="Status">' . $status_badge . '</td>';
