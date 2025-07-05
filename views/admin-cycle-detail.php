@@ -76,7 +76,7 @@ $status_colors = [
 ];
 $color = $status_colors[ $cycle->status ] ?? '#6c757d';
 
-echo '<p class="status" style="padding:4px 8px; color:' . esc_attr($color) . ';border-radius:4px; border:2px solid ' . esc_attr($color) . ';">' . ucfirst( $cycle->status ) . '</p>';
+echo '<p class="status" style="color:' . esc_attr($color) . '; border:2px solid ' . esc_attr($color) . ';">' . ucfirst( $cycle->status ) . '</p>';
 echo '</div>';
 echo '</div>'; // gmp-two-col
 
