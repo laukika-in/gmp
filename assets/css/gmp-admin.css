@@ -126,6 +126,16 @@
   gap: 10px;
 }
 
+.gmp-admin-actions .button {
+  border: none;
+  padding: 8px 12px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 13px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
 /* Status Badges */
 .gmp-status-active {
   background: #d4edda;
@@ -174,24 +184,29 @@
   font-size: 12px;
 }
 .gmp-btn-close {
-  background: #28a745;
+  background: #28a745 !important;
+  color: #fff;
 }
 .gmp-btn-cancel {
-  background: #dc3545;
+  background: #dc3545 !important;
+  color: #fff;
 }
 .gmp-btn-hold {
-  background: #ffc107;
+  background: #ffc107 !important;
+  color: #fff;
   color: #000;
 }
 .gmp-btn-resume {
-  background: #007bff;
+  background: #007bff !important;
+  color: #fff;
 }
 
 .gmp-btn-close:hover,
 .gmp-btn-cancel:hover,
 .gmp-btn-hold:hover,
 .gmp-btn-resume:hover {
-  opacity: 0.9;
+  opacity: 0.9 !important;
+  color: #fff;
 }
 .gmp-paid-row {
   background-color: #eafbe7;
