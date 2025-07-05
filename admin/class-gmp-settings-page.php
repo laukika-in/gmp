@@ -40,67 +40,56 @@ class GMP_Settings_Page {
             <?php wp_nonce_field( 'gmp_save_settings' ); ?>
             <input type="hidden" name="action" value="gmp_save_settings" />
 
-            <div class="gmp-settings-grid gmp-toggle">
-                <?php foreach ( $products as $product ):
-                    $pid = $product->get_id();
-                    $lock = get_post_meta( $pid, '_gmp_lock_months', true );
-                    $ext  = get_post_meta( $pid, '_gmp_extension_months', true );
-                    $base = get_post_meta( $pid, '_gmp_base_interest', true );
-                    $ei   = get_post_meta( $pid, '_gmp_extension_interest', true );
-                    $ei   = is_array( $ei ) ? $ei : maybe_unserialize( $ei );
-                ?>
-                <div class="gmp-card">
-                    <div class="gmp-card-header">
-                        <strong><?php echo esc_html( $product->get_name() ); ?></strong>
-                        <a href="#" class="gmp-toggle">Edit</a>
-                    </div>
-
-                    <div class="gmp-card-body" style="display:none;">
-                       <div class="gmp-settings-grid gmp-card">
-    <!-- Lock Period -->
-    <div class="gmp-setting-row" style="display: flex; align-items: center; gap: 20px;">
-        <label style="min-width: 200px;">Lock Period (Months):</label>
-        <div>
-            <?php echo esc_html( $lock ); ?>
-            <input type="hidden" name="lock[<?php echo $pid; ?>]" value="<?php echo esc_attr( $lock ); ?>">
+            <div class="gmp-settings-grid">
+    <?php foreach ( $products as $product ) :
+        $pid = $product->get_id();
+        $lock = get_post_meta( $pid, '_gmp_lock_months', true );
+        $ext  = get_post_meta( $pid, '_gmp_extension_months', true );
+        $base = get_post_meta( $pid, '_gmp_base_interest', true );
+        $ei   = get_post_meta( $pid, '_gmp_extension_interest', true );
+        $ei   = is_array( $ei ) ? $ei : maybe_unserialize( $ei );
+    ?>
+    <div class="gmp-card gmp-card-open">
+        <div class="gmp-card-header">
+            <span class="gmp-card-title"><?php echo esc_html( $product->get_name() ); ?></span>
+            <span class="gmp-toggle-icon">&#9660;</span>
         </div>
-    </div>
-
-    <!-- Extension Period -->
-    <div class="gmp-setting-row" style="display: flex; align-items: center; gap: 20px;">
-        <label style="min-width: 200px;">Extension Period (Months):</label>
-        <div>
-            <?php echo esc_html( $ext ); ?>
-            <input type="hidden" name="ext[<?php echo $pid; ?>]" value="<?php echo esc_attr( $ext ); ?>">
-        </div>
-    </div>
-
-    <!-- Base Interest -->
-    <div class="gmp-setting-row" style="display: flex; align-items: center; gap: 20px;">
-        <label style="min-width: 200px;">Base Interest (%):</label>
-        <input type="number" step="0.01" name="base[<?php echo $pid; ?>]" value="<?php echo esc_attr( $base ); ?>" min="0" style="width: 100px;">
-    </div>
-
-    <!-- Extension Interest per Month -->
-    <div class="gmp-setting-row" style="display: flex; flex-direction: column; gap: 10px;">
-        <label>Extension Interest per Month:</label>
-        <div style="display: flex; flex-wrap: wrap; gap: 15px;">
-            <?php
-            for ( $i = 1; $i <= intval($ext); $i++ ) {
-                $val = isset( $ei[$i] ) ? esc_attr( $ei[$i] ) : '';
-                echo "<label style='display: flex; align-items: center; gap: 6px;'>M{$i}
-                    <input type='number' step='0.01' min='0' name='ei[{$pid}][{$i}]' value='{$val}' style='width:60px;' />
-                </label>";
-            }
-            ?>
-        </div>
-    </div>
-</div>
-
-                    </div>
+        <div class="gmp-card-body">
+            <div class="gmp-setting-row">
+                <label>Lock Period (Months):</label>
+                <div>
+                    <?php echo esc_html( $lock ); ?>
+                    <input type="hidden" name="lock[<?php echo $pid; ?>]" value="<?php echo esc_attr( $lock ); ?>">
                 </div>
-                <?php endforeach; ?>
             </div>
+            <div class="gmp-setting-row">
+                <label>Extension Period (Months):</label>
+                <div>
+                    <?php echo esc_html( $ext ); ?>
+                    <input type="hidden" name="ext[<?php echo $pid; ?>]" value="<?php echo esc_attr( $ext ); ?>">
+                </div>
+            </div>
+            <div class="gmp-setting-row">
+                <label>Base Interest (%):</label>
+                <input type="number" step="0.01" min="0" name="base[<?php echo $pid; ?>]" value="<?php echo esc_attr( $base ); ?>" />
+            </div>
+            <div class="gmp-setting-row gmp-ext-row">
+                <label>Extension Interest per Month:</label>
+                <div class="gmp-ext-inputs">
+                    <?php for ( $i = 1; $i <= intval($ext); $i++ ) :
+                        $val = isset( $ei[$i] ) ? esc_attr( $ei[$i] ) : '';
+                    ?>
+                        <label class="gmp-ext-item">M<?php echo $i; ?>
+                            <input type="number" step="0.01" min="0" name="ei[<?php echo $pid; ?>][<?php echo $i; ?>]" value="<?php echo $val; ?>" />
+                        </label>
+                    <?php endfor; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endforeach; ?>
+</div>
+ 
 
             <p><input type="submit" class="button button-primary" value="Save All Settings"></p>
         </form>
