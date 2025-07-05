@@ -58,14 +58,14 @@ class GMP_Settings_Page {
             <div class="gmp-setting-row">
                 <label class="heading">Lock Period</label>
                 <div>
-                    <h2><?php echo esc_html( $lock ); ?><h2><br><p> Months</p>
+                    <h2><?php echo esc_html( $lock ); ?><h2><p style="margin-top:20px;"> Months</p>
                     <input type="hidden" name="lock[<?php echo $pid; ?>]" value="<?php echo esc_attr( $lock ); ?>">
                 </div>
             </div>
             <div class="gmp-setting-row">
                 <label class="heading">Extension Period</label>
                 <div>
-                    <h2><?php echo esc_html( $ext ); ?></h2><p> Months</p>
+                    <h2><?php echo esc_html( $ext ); ?></h2><p style="margin-top:20px;"> Months</p>
                     <input type="hidden" name="ext[<?php echo $pid; ?>]" value="<?php echo esc_attr( $ext ); ?>">
                 </div>
             </div>
