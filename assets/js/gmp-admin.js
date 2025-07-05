@@ -36,23 +36,4 @@ jQuery(document).ready(function ($) {
       }
     );
   });
-  $(".gmp-buy-now").on("click", function (e) {
-    e.preventDefault();
-    const $btn = $(this);
-    const termsId = $btn.data("terms");
-    if (!$(termsId).is(":checked")) {
-      $.fancybox.open({
-        src: "/digital-gold-terms/",
-        type: "iframe",
-        opts: {
-          iframe: { preload: false },
-          afterClose: function () {
-            alert("Please accept Terms & Conditions to proceed.");
-          },
-        },
-      });
-    } else {
-      window.location.href = $btn.data("url");
-    }
-  });
 });
