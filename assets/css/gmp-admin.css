@@ -126,23 +126,6 @@
   gap: 10px;
 }
 
-.gmp-admin-actions .button {
-  background-color: #0073aa;
-  color: #fff;
-  border: none;
-  padding: 8px 12px;
-  text-align: center;
-  cursor: pointer;
-  font-size: 13px;
-  border-radius: 4px;
-  transition: background-color 0.2s ease;
-}
-
-.gmp-admin-actions .button:hover {
-  background-color: #005177;
-  color: #fff;
-}
-
 /* Status Badges */
 .gmp-status-active {
   background: #d4edda;
