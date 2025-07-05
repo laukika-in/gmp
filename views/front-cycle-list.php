@@ -14,7 +14,8 @@ $cycles = $wpdb->get_results( $wpdb->prepare(
 if ( ! isset( $_GET['view'] ) ) {
 
 echo '<h3>My EMI Cycles</h3>';
-echo '<div class="gmp-plan-card">';
+if ( empty( $cycles ) ) {
+  echo '<div class="gmp-plan-card">';
     echo '<div class="gmp-card-left">';
         echo wc_price( $product->get_price() );
         echo '<small>Per Month</small>';
@@ -30,6 +31,7 @@ echo '<div class="gmp-plan-card">';
     echo '</div>';
 echo '</div>';
 
+}
 
 echo '<table class="woocommerce-table gmp-list-table ux-table table table-striped table-hover">';
 echo '<thead><tr>
