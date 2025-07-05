@@ -40,7 +40,7 @@ class GMP_Settings_Page {
             <?php wp_nonce_field( 'gmp_save_settings' ); ?>
             <input type="hidden" name="action" value="gmp_save_settings" />
 
-            <div class="gmp-settings-grid">
+            <div class="gmp-settings-grid gmp-toggle">
                 <?php foreach ( $products as $product ):
                     $pid = $product->get_id();
                     $lock = get_post_meta( $pid, '_gmp_lock_months', true );

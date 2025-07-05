@@ -243,17 +243,3 @@
 .gmp-card-header .gmp-toggle:hover {
   color: #005177;
 }
-
-.gmp-card-title {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.gmp-toggle-icon {
-  font-size: 16px;
-  transition: transform 0.2s ease;
-}
-
-.gmp-card.open .gmp-toggle-icon {
-  transform: rotate(180deg);
-}

@@ -20,12 +20,4 @@ jQuery(document).ready(function ($) {
     const url = $(this).data("url");
     Fancybox.show([{ src: url, type: "iframe" }]);
   });
-
-  $(".gmp-card").addClass("open"); // Keep all open initially
-
-  $(".gmp-card-header").on("click", function () {
-    var card = $(this).closest(".gmp-card");
-    card.toggleClass("open");
-    card.find(".gmp-card-body").slideToggle(150);
-  });
 });
