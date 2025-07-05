@@ -78,9 +78,14 @@ table.shop_table,
   display: inline-block;
   padding: 2px 8px;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: 600;
   background: #ccc;
   color: #fff;
+  width: auto;
+  text-align: center;
+  margin: auto;
+  height: auto;
 }
 
 .badge-active {
@@ -176,11 +181,13 @@ table.shop_table,
 .gmp-card-body {
   padding: 15px;
   font-size: 14px;
+  text-align: center;
 }
 
 .gmp-card-body h4 {
   font-size: 16px;
   margin: 0 0 5px;
+  text-align: center;
 }
 
 .gmp-view-btn {

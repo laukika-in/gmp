@@ -110,8 +110,8 @@ if ( !empty( $cycles ) ) {
         echo '<div class="gmp-card-thumb">' . $thumb . '</div>';
         echo '<div class="gmp-card-body">';
         echo '<h4><a href="' . esc_url( get_permalink( $parent->get_id() ) ) . '">' . esc_html( $parent_name ) . '</a></h4>';
-        echo '<small style="color:#666;">' . esc_html( $variation_label ) . '</small>';
-        echo '<p><strong>Status:</strong> ' . $status_badge . '</p>';
+        echo '<p style="color:#666;">EMI: ' . esc_html( $variation_label ) . '</p>';
+        echo '<p>  ' . $status_badge . '</p>';
         echo '<p><strong>Duration:</strong> ' . esc_html( $start ) . ' – ' . esc_html( $end ) . '</p>';
         echo '<p><strong>Months:</strong> ' . intval( $cycle->total_months ) . '</p>';
         echo '<a href="' . esc_url( $url ) . '" class="button gmp-view-btn">View Details</a>';
