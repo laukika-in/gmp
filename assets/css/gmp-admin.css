@@ -246,18 +246,19 @@
 }
 .gmp-card-body {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
+  gap: 16px;
+  padding: 24px;
 }
 .gmp-setting-row {
   display: flex;
   align-items: center;
-  border: 2px solid #d6d6d6;
-  gap: 15px;
+  gap: 16px;
   flex-direction: column;
-  background: #fff;
   padding: 8px;
   text-align: center;
   border-radius: 12px;
+  width: 25%;
 }
 
 .gmp-setting-row label {
@@ -272,13 +273,30 @@
   border: 1px solid #ccc;
   border-radius: 4px;
   text-align: center;
+  font-size: 18px;
+  font-weight: 500;
 }
-
+.gmp-setting-row h2 {
+  font-size: 3rem;
+  margin: 12px;
+  font-weight: bold;
+}
+.gmp-setting-row label.heading {
+  font-weight: 500;
+  background: #fff;
+  margin-top: 0;
+  font-size: 16px;
+  padding: 12px;
+  border-radius: 6px;
+  width: 100%;
+}
 .gmp-ext-row .gmp-ext-inputs {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .gmp-ext-item {

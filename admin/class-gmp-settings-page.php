@@ -56,25 +56,25 @@ class GMP_Settings_Page {
         </div>
         <div class="gmp-card-body">
             <div class="gmp-setting-row">
-                <label>Lock Period (Months):</label>
+                <label class="heading">Lock Period (Months):</label>
                 <div>
                     <h2><?php echo esc_html( $lock ); ?><h2>
                     <input type="hidden" name="lock[<?php echo $pid; ?>]" value="<?php echo esc_attr( $lock ); ?>">
                 </div>
             </div>
             <div class="gmp-setting-row">
-                <label>Extension Period (Months):</label>
+                <label class="heading">Extension Period (Months):</label>
                 <div>
                     <h2><?php echo esc_html( $ext ); ?></h2>
                     <input type="hidden" name="ext[<?php echo $pid; ?>]" value="<?php echo esc_attr( $ext ); ?>">
                 </div>
             </div>
             <div class="gmp-setting-row">
-                <label>Base Interest (%):</label>
+                <label class="heading">Base Interest (%):</label>
                 <input type="number" step="0.01" min="0" name="base[<?php echo $pid; ?>]" value="<?php echo esc_attr( $base ); ?>" />
             </div>
-            <div class="gmp-setting-row gmp-ext-row">
-                <label>Extension Interest per Month:</label>
+            <div class="gmp-setting-row gmp-ext-row" style=" min-width: 40%!important ">
+                <label class="heading">Extension Interest per Month:</label>
                 <div class="gmp-ext-inputs">
                     <?php for ( $i = 1; $i <= intval($ext); $i++ ) :
                         $val = isset( $ei[$i] ) ? esc_attr( $ei[$i] ) : '';
