@@ -75,12 +75,20 @@ echo '<p><strong>Payable Installment:</strong> ' . $price . '</p>';
 }
 echo '</div></div>';
 echo '</div>';
-
+echo '<div class="gmp-col"><h3>User Details</h3>';
+if ( $user ) {
+    echo '<p><strong>Name:</strong> <a href="' . esc_url( $edit_user_link ) . '" target="_blank">' . esc_html( $user->display_name ) . '</a></p>';
+    echo '<p><strong>Email:</strong> <a href="mailto:' . esc_attr( $user->user_email ) . '">' . esc_html( $user->user_email ) . '</a></p>';
+    echo '<p><strong>User ID:</strong> ' . esc_html( $user->ID ) . '</p>';
+} else {
+    echo '<p>User not found</p>';
+}
+echo '</div>';
 echo '</div>'; // gmp-two-col
 
 // === Installments Table ===
 echo '<br><table class="widefat gmp-table"><thead><tr>
-    <th style="width:50px;">#</th><th>EMI</th><th>Interest</th><th>Status</th><th>Due</th><th>Total</th><th>Paid On</th><th>Order</th>
+    <th style="width:50px;">#</th><th>EMI</th><th>Interest</th><th>Status</th><th>Total</th><th>Due</th><th>Paid On</th><th>Order</th>
 </tr></thead><tbody>';
 
 foreach ( $installments as $ins ) {
@@ -95,7 +103,7 @@ foreach ( $installments as $ins ) {
       echo '<td>' . wc_price( $ins->total_with_interest ) . '</td>';
        echo '<td>' . date_i18n( 'j M Y', strtotime( $ins->due_date ) ) . '</td>';
     echo '<td>' . ( $ins->paid_date ? date_i18n( 'j M Y', strtotime( $ins->paid_date ) ) : '—' ) . '</td>';
-    echo '<td>' . ( $ins->order_id ? '<a href="' . esc_url( get_edit_post_link( $ins->order_id ) ) . '">#' . $ins->order_id . '</a>' : '-' ) . '</td>';
+    echo '<td class="order-id">' . ( $ins->order_id ? '<a href="' . esc_url( get_edit_post_link( $ins->order_id ) ) . '">#' . $ins->order_id . '</a>' : '-' ) . '</td>';
     echo '</tr>';
 }
 echo '</tbody></table>';

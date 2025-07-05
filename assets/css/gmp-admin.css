@@ -217,6 +217,7 @@
   border: 2px solid #d6d6d6;
   border-collapse: collapse;
   border-spacing: 0px;
+  align-content: center;
 }
 .gmp-table {
   border-collapse: collapse;
@@ -246,6 +247,10 @@
   height: 100%;
   margin: 0px;
   padding: 4px;
+}
+.gmp-table .order-id {
+  font-size: 18px;
+  font-weight: 600;
 }
 .gmp-btn-close:hover,
 .gmp-btn-cancel:hover,
@@ -330,6 +335,7 @@
   margin: 12px;
   font-weight: bold;
 }
+
 .gmp-setting-row label.heading {
   font-weight: 500;
   background: #2f2f2f;
