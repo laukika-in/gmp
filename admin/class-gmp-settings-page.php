@@ -50,10 +50,10 @@ class GMP_Settings_Page {
                     $ei   = is_array( $ei ) ? $ei : maybe_unserialize( $ei );
                 ?>
                 <div class="gmp-card">
-                    <div class="gmp-card-header">
-                        <strong><?php echo esc_html( $product->get_name() ); ?></strong>
-                        <a href="#" class="gmp-toggle">Edit</a>
-                    </div>
+                   <div class="gmp-card-header">
+    <span class="gmp-card-title"><?php echo esc_html( $product->get_name() ); ?></span>
+    <span class="gmp-toggle-icon">&#9660;</span>
+</div>
 
                     <div class="gmp-card-body" style="display:none;">
                         <table class="form-table">
@@ -96,17 +96,7 @@ class GMP_Settings_Page {
 
             <p><input type="submit" class="button button-primary" value="Save All Settings"></p>
         </form>
-    </div>
- 
-
-    <script>
-    jQuery(document).ready(function($){
-        $('.gmp-toggle').on('click', function(e){
-            e.preventDefault();
-            $(this).closest('.gmp-card').find('.gmp-card-body').slideToggle(200);
-        });
-    });
-    </script>
+    </div> 
     <?php
 }
 

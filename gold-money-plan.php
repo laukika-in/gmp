@@ -16,7 +16,8 @@ define( 'GMP_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 // ✅ MUST load this before using GMP_Init in register_activation_hook
 require_once GMP_PLUGIN_DIR . 'includes/class-gmp-init.php';
-require_once GMP_PLUGIN_DIR . 'includes/class-gmp-db.php'; // this is called inside on_activate()
+require_once GMP_PLUGIN_DIR . 'includes/class-gmp-db.php';
+// this is called inside on_activate()
 
 // ✅ Register activation hook only AFTER class is loaded
 register_activation_hook( __FILE__, [ 'GMP_Init', 'on_activate' ] );
