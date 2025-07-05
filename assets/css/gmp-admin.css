@@ -1,6 +1,5 @@
 /* General Layout */
 .gmp-admin-wrap {
-  background: #fff;
   padding: 20px;
   border-radius: 8px;
   margin-bottom: 30px;
@@ -21,6 +20,7 @@
 .gmp-two-col .gmp-col {
   flex: 1;
   min-width: 280px;
+  overflow: hidden;
 }
 
 /* Admin Header */
@@ -61,7 +61,6 @@
   width: 100%;
   max-width: 100%;
   border-collapse: collapse;
-  margin-bottom: 20px;
 }
 
 .gmp-summary-table th,
@@ -85,7 +84,7 @@
 
 .gmp-col {
   flex: 1;
-  background: #f8f9fa;
+  background: #fffce4;
   padding: 20px;
   border: 1px solid #ddd;
   border-radius: 6px;
@@ -98,12 +97,11 @@
 }
 
 .gmp-col h3 {
-  background: #e9ecef;
+  background: #2f2f2f;
   margin-top: 0;
   font-size: 16px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #fff;
   padding: 12px;
-  border-radius: 6px;
 }
 
 /* Product Info */
@@ -234,7 +232,6 @@
   font-weight: 600;
   cursor: pointer;
   padding: 10px 0;
-  border-bottom: 1px solid #ddd;
 }
 .gmp-card-header .gmp-toggle {
   font-size: 16px;
@@ -247,7 +244,7 @@
 .gmp-card-body {
   display: flex;
   justify-content: space-around;
-  gap: 16px;
+  gap: 24px;
   padding: 24px;
 }
 .gmp-setting-row {
@@ -255,10 +252,13 @@
   align-items: center;
   gap: 16px;
   flex-direction: column;
-  padding: 8px;
+  padding: 0px;
   text-align: center;
   border-radius: 12px;
   width: 25%;
+  border: 2px solid #2f2f2f;
+  overflow: hidden;
+  padding: 0px 12px 12px 12px;
 }
 
 .gmp-setting-row label {
@@ -283,12 +283,12 @@
 }
 .gmp-setting-row label.heading {
   font-weight: 500;
-  background: #fff;
+  background: #2f2f2f;
   margin-top: 0;
   font-size: 16px;
   padding: 12px;
-  border-radius: 6px;
   width: 100%;
+  color: #fff;
 }
 .gmp-ext-row .gmp-ext-inputs {
   display: flex;
@@ -305,4 +305,10 @@
   align-items: center;
   gap: 6px;
   font-weight: 400;
+}
+.gmp-edit {
+  border-bottom: 2px solid #1a7ed0;
+  padding: 0px 2px;
+  color: #1a7ed0;
+  margin-right: 20px;
 }
