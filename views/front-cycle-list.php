@@ -63,7 +63,7 @@ echo '</div>';
         echo '<p><strong>Plan Duration:</strong> ' . intval($lock_months) . ' Months</p>';
         echo '<p><strong>You Pay Per Month:</strong> ' . $per_month . '</p>';
         echo '<p><strong>Total Amount You Pay:</strong> ' . $total_pay . '</p>';
-       echo '<label><input type="checkbox" id="terms-' . esc_attr($product->get_id()) . '"> <a href="#" class="gmp-terms-link" data-url="/digital-gold-terms">Terms & Conditions</a></label>';
+       echo '<label><input type="checkbox" id="terms-' . esc_attr($product->get_id()) . '"> <a href="#" class="gmp-terms-link" data-url="/sample-page/">Terms & Conditions</a></label>';
 
         echo '<a href="#" class="button gmp-buy-now" data-url="' . esc_url($product_url) . '" data-terms="#terms-' . esc_attr($product->get_id()) . '">Buy Now</a>';
         echo '</div></div>';
