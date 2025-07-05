@@ -52,7 +52,7 @@ class GMP_Settings_Page {
     <div class="gmp-card gmp-card-open">
         <div class="gmp-card-header">
             <span class="gmp-card-title"><?php echo esc_html( $product->get_name() ); ?></span>
-            <span class="gmp-edit">Edit Interest;</span>
+            <span class="gmp-edit">Edit Interest</span>
         </div>
         <div class="gmp-card-body">
             <div class="gmp-setting-row">
