@@ -205,11 +205,6 @@
   background: #007bff !important;
   color: #fff !important;
 }
-.gmp-table .paid {
-  background: #4caf50;
-  text-align: center;
-  color: #fff;
-}
 .gmp-table th {
   font-size: 18px;
   font-weight: 600;

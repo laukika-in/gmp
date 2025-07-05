@@ -80,7 +80,7 @@ echo '</div>'; // gmp-two-col
 
 // === Installments Table ===
 echo '<br><table class="widefat gmp-table"><thead><tr>
-    <th style="width:50px;">#</th><th>Due</th><th>EMI</th><th>Interest</th><th>Total</th><th>Status</th><th>Paid On</th><th>Order</th>
+    <th style="width:50px;">#</th><th>EMI</th><th>Interest</th><th>Status</th><th>Due</th><th>Total</th><th>Paid On</th><th>Order</th>
 </tr></thead><tbody>';
 
 foreach ( $installments as $ins ) {
