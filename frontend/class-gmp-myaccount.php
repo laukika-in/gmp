@@ -21,14 +21,24 @@ class GMP_MyAccount {
         }
     }
 
-    // ✅ Renders content via shortcode
-    public static function render_shortcode( $atts = [], $content = null ) {
-        ob_start();
+   // ✅ Renders content via shortcode
+public static function render_shortcode( $atts = [], $content = null ) {
+    ob_start();
 
-        echo '<div class="gmp-emi-cycles">';
+    echo '<div class="gmp-emi-cycles">';
+    // 🔁 Replace this:
+    // include GMP_PLUGIN_DIR . 'views/front-cycle-list.php';
+
+    // ✅ With this:
+    if ( isset($_GET['view']) && absint($_GET['view']) > 0 ) {
+        include GMP_PLUGIN_DIR . 'views/front-cycle-detail.php';
+    } else {
         include GMP_PLUGIN_DIR . 'views/front-cycle-list.php';
-        echo '</div>';
-
-        return ob_get_clean();
     }
+
+    echo '</div>';
+
+    return ob_get_clean();
+}
+
 }
