@@ -112,8 +112,8 @@ if ( !empty( $cycles ) ) {
         echo '<h4><a href="' . esc_url( get_permalink( $parent->get_id() ) ) . '">' . esc_html( $parent_name ) . '</a></h4>';
         echo '<p style="color:#666;">EMI: ' . esc_html( $variation_label ) . '</p>';
         echo '<p>  ' . $status_badge . '</p>';
-        echo '<p><strong>Duration:</strong> ' . esc_html( $start ) . ' – ' . esc_html( $end ) . '</p>';
-        echo '<p><strong>Months:</strong> ' . intval( $cycle->total_months ) . '</p>';
+        echo '<p><strong>Duration:</strong> ' . esc_html( $start ) . ' – ' . esc_html( $end ) . '</p><br><small>Total EMI' . intval( $cycle->total_months ) . '</small>';
+         
         echo '<a href="' . esc_url( $url ) . '" class="button gmp-view-btn">View Details</a>';
         echo '</div></div>';
     }

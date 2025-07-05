@@ -82,10 +82,10 @@ table.shop_table,
   font-weight: 600;
   background: #ccc;
   color: #fff;
-  width: auto;
+  width: auto !important;
   text-align: center;
   margin: auto;
-  height: auto;
+  height: auto !important;
 }
 
 .badge-active {
@@ -147,9 +147,10 @@ table.shop_table,
 /* === Cycle Grid & Cards === */
 .gmp-cycle-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(48%, 1fr));
   gap: 20px;
   margin-bottom: 30px;
+  justify-content: center;
 }
 
 .gmp-cycle-card {
