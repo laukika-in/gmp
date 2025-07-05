@@ -185,20 +185,20 @@
 }
 .gmp-btn-close {
   background: #28a745 !important;
-  color: #fff;
+  color: #fff !important;
 }
 .gmp-btn-cancel {
   background: #dc3545 !important;
-  color: #fff;
+  color: #fff !important;
 }
 .gmp-btn-hold {
   background: #ffc107 !important;
-  color: #fff;
+  color: #fff !important;
   color: #000;
 }
 .gmp-btn-resume {
   background: #007bff !important;
-  color: #fff;
+  color: #fff !important;
 }
 
 .gmp-btn-close:hover,
