@@ -84,7 +84,7 @@ table.shop_table,
   color: #fff;
   width: auto !important;
   text-align: center;
-  margin: auto;
+  margin: auto !important;
   height: auto !important;
 }
 
