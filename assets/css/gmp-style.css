@@ -165,6 +165,45 @@ table.shop_table {
 .gmp-buy-now:hover {
   background: #333;
 }
+.gmp-plan-card {
+  display: flex;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+}
+
+.gmp-card-left {
+  background: #ffd700;
+  padding: 30px 20px;
+  width: 160px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: bold;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.gmp-price-big {
+  font-size: 32px;
+}
+
+.gmp-card-right {
+  flex: 1;
+  background: #fff;
+  padding: 20px;
+  position: relative;
+}
+
+.gmp-card-right h3 {
+  margin-top: 0;
+  font-size: 20px;
+}
+
+.gmp-card-right .button {
+  margin-top: 10px;
+}
 
 /* === Responsive Tables === */
 @media (max-width: 768px) {

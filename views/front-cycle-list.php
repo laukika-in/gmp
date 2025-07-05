@@ -16,61 +16,52 @@ $cycles = $wpdb->get_results( $wpdb->prepare(
 // 🟡 CASE 1: NO CYCLES YET
 // =======================
 if ( empty( $cycles ) ) {
-    echo '<h3>Start Your Gold EMI Plan</h3>';
-
     $args = [
         'post_type'      => 'product',
         'posts_per_page' => -1,
-        'post_status'    => 'publish',
-        'tax_query'      => [
-            [
-                'taxonomy' => 'product_cat',
-                'field'    => 'slug',
-                'terms'    => ['gmp-plan'],
-            ]
-        ],
+        'tax_query'      => [[
+            'taxonomy' => 'product_cat',
+            'field'    => 'slug',
+            'terms'    => 'gmp-plan',
+        ]],
     ];
+    $products = wc_get_products( $args );
 
-    $loop = new WP_Query( $args );
+    foreach ( $products as $product ) {
+        if ( ! $product->is_type( 'variable' ) ) continue;
 
-    if ( $loop->have_posts() ) {
-        echo '<div class="gmp-plans-grid">';
+        $variations = $product->get_children();
+        $prices = array_map(function($vid) {
+            $v = wc_get_product($vid);
+            return $v ? floatval($v->get_price()) : 0;
+        }, $variations);
 
-        while ( $loop->have_posts() ) {
-            $loop->the_post();
-            $product = wc_get_product( get_the_ID() );
-            if ( ! $product || ! $product->is_type('variable') ) continue;
+        $min_price = min($prices);
+        $max_price = max($prices);
 
-            $price = $product->get_variation_price( 'min' );
-            $permalink = get_permalink( $product->get_id() );
-            $thumbnail = $product->get_image( 'woocommerce_thumbnail', [ 'style' => 'max-width:100%; height:auto;' ] );
+        // Lock period from meta (or fallback)
+        $lock_months = get_post_meta( $product->get_id(), '_gmp_lock_months', true ) ?: 10;
 
-            echo '<div class="gmp-plan-card">';
-            echo '<div class="gmp-card-left" style="background:#ffd700; padding:20px;">';
-            echo $thumbnail;
-            echo '<div style="font-size:26px; font-weight:bold; margin-top:10px;">' . wc_price( $price ) . '</div>';
-            echo '<small>Per Month</small>';
-            echo '</div>';
+        $per_month = wc_price($min_price) . ($min_price != $max_price ? ' – ' . wc_price($max_price) : '');
+        $total_pay = wc_price($min_price * $lock_months) . ($min_price != $max_price ? ' – ' . wc_price($max_price * $lock_months) : '');
 
-            echo '<div class="gmp-card-right" style="padding:20px;">';
-            echo '<h3>' . esc_html( $product->get_name() ) . '</h3>';
-            echo '<p><strong>Plan Type:</strong> Amount</p>';
-            echo '<p><strong>Plan Duration:</strong> 10 Months</p>';
-            echo '<p><strong>You Pay Per Month:</strong> ' . wc_price( $price ) . '</p>';
-            echo '<p><strong>Total Amount You Pay:</strong> ' . wc_price( $price * 10 ) . '</p>';
-            echo '<label><input type="checkbox"> Terms & Conditions</label><br>';
-            echo '<a href="' . esc_url( $permalink ) . '" class="button gmp-buy-now" style="margin-top:10px;">Buy Now</a>';
-            echo '</div>';
-            echo '</div>';
-        }
+        $product_url = get_permalink( $product->get_id() );
 
+        echo '<div class="gmp-plan-card">';
+        echo '<div class="gmp-card-left">';
+        echo '<span class="gmp-price-big">' . wc_price($min_price) . '</span><br>';
+        echo '<small>Per Month</small>';
         echo '</div>';
-        wp_reset_postdata();
-    } else {
-        echo '<p>No GMP Plans found. Please check back later.</p>';
+        echo '<div class="gmp-card-right">';
+        echo '<h3>' . esc_html( $product->get_name() ) . '</h3>';
+        echo '<p><strong>Plan Type:</strong> Amount</p>';
+        echo '<p><strong>Plan Duration:</strong> ' . intval($lock_months) . ' Months</p>';
+        echo '<p><strong>You Pay Per Month:</strong> ' . $per_month . '</p>';
+        echo '<p><strong>Total Amount You Pay:</strong> ' . $total_pay . '</p>';
+        echo '<label><input type="checkbox" id="terms-' . esc_attr($product->get_id()) . '"> Terms & Conditions</label>';
+        echo '<a href="#" class="button gmp-buy-now" data-url="' . esc_url($product_url) . '" data-terms="#terms-' . esc_attr($product->get_id()) . '">Buy Now</a>';
+        echo '</div></div>';
     }
-
-    return; // prevent rest of table from loading
 }
 
 // =======================
