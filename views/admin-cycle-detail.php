@@ -70,7 +70,7 @@ echo '</div></div>';
 echo '</div>';
 echo '<div class="gmp-col"><h3>Plan Status</h3>';
 $status_colors = [
-    'active' => '#4caf50',
+    'active' => '#f3b100',
     'closed' => '#28a745',
     'cancelled' => '#dc3545'
 ];
