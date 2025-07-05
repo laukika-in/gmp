@@ -22,7 +22,8 @@ $parent  = wc_get_product( $product ? $product->get_parent_id() : 0 );
 
 $thumb  = $parent ? $parent->get_image( 'woocommerce_thumbnail', ['class' => 'gmp-thumb-admin'] ) : '';
 $price  = $product ? wc_price( $product->get_price() ) : '';
-$edit_product_link = $product ? get_edit_post_link( $product->get_id() ) : '#';
+$edit_product_link = $parent ? get_edit_post_link( $parent->get_id() ) : '#';
+
 $edit_user_link = $user ? admin_url( 'user-edit.php?user_id=' . $user->ID ) : '#';
 
 echo '<div class="wrap gmp-admin-wrap">';
@@ -57,6 +58,7 @@ echo '<div class="gmp-product-info">';
 echo $thumb;
 echo '<div>';
 echo '<p><a href="' . esc_url( $edit_product_link ) . '" target="_blank"><strong>' . esc_html( $parent ? $parent->get_name() : 'N/A' ) . '</strong></a></p>';
+
 
 if ( $product ) {
     $attrs = [];

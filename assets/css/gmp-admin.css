@@ -1,67 +1,4 @@
-.gmp-admin-table .gmp-admin-product {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.gmp-admin-product img {
-  width: 40px;
-  height: auto;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-}
-.gmp-status-active {
-  background: #d4edda;
-  color: #155724;
-  padding: 3px 6px;
-  border-radius: 4px;
-}
-.gmp-status-closed {
-  background: #f8d7da;
-  color: #721c24;
-  padding: 3px 6px;
-  border-radius: 4px;
-}
-.gmp-admin-header {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 20px;
-}
-.gmp-admin-header .gmp-thumb img {
-  width: 80px;
-  height: auto;
-  border-radius: 6px;
-}
-.gmp-admin-detail td,
-.gmp-admin-detail th {
-  vertical-align: middle;
-  padding: 10px;
-}
-
-.gmp-meta-section {
-  display: flex;
-  gap: 40px;
-  margin: 20px 0;
-}
-.gmp-col {
-  flex: 1;
-  background: #fff;
-  padding: 20px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-}
-.gmp-col img {
-  max-width: 60px;
-  height: auto;
-  border-radius: 4px;
-}
-.gmp-summary-actions {
-  display: flex;
-  gap: 30px;
-  margin-top: 30px;
-}
-.gmp-toolbar {
-  margin-bottom: 20px;
-} /* General Layout */
+/* General Layout */
 .gmp-admin-wrap {
   background: #fff;
   padding: 20px;
@@ -70,6 +7,11 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
+.gmp-toolbar {
+  margin-bottom: 20px;
+}
+
+/* Two-Column Layout */
 .gmp-two-col {
   display: flex;
   flex-wrap: wrap;
@@ -81,16 +23,40 @@
   min-width: 280px;
 }
 
-/* Thumbnail Styling */
-.gmp-thumb-admin img {
-  width: 100%;
-  max-width: 120px;
+/* Admin Header */
+.gmp-admin-header {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.gmp-admin-header .gmp-thumb img {
+  width: 80px;
   height: auto;
   border-radius: 6px;
+}
+
+/* Tables & Details */
+.gmp-admin-table .gmp-admin-product {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gmp-admin-product img {
+  width: 40px;
+  height: auto;
+  border-radius: 4px;
   border: 1px solid #ddd;
 }
 
-/* Summary Table */
+.gmp-admin-detail td,
+.gmp-admin-detail th {
+  vertical-align: middle;
+  padding: 10px;
+}
+
+/* Summary Section */
 .gmp-summary-table {
   width: 100%;
   max-width: 100%;
@@ -104,29 +70,94 @@
   border-bottom: 1px solid #eee;
 }
 
-/* Action Buttons */
-.gmp-admin-actions {
+.gmp-summary-actions {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  gap: 30px;
+  margin-top: 30px;
 }
-.gmp-admin-actions .button {
-  width: fit-content;
+
+/* Meta Columns */
+.gmp-meta-section {
+  display: flex;
+  gap: 40px;
+  margin: 20px 0;
 }
-.gmp-admin-actions .button {
-  margin-bottom: 8px;
-  width: 160px;
+
+.gmp-col {
+  flex: 1;
+  background: #fff;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
 }
+
+.gmp-col img {
+  max-width: 60px;
+  height: auto;
+  border-radius: 4px;
+}
+
+.gmp-col h3 {
+  margin-top: 0;
+  font-size: 16px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 5px;
+  margin-bottom: 15px;
+}
+
+/* Product Info */
 .gmp-product-info {
   display: flex;
   align-items: center;
   gap: 15px;
 }
+
 .gmp-product-info .gmp-thumb img {
   width: 60px;
   height: auto;
   border-radius: 6px;
 }
+
+/* Admin Actions */
+.gmp-admin-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gmp-admin-actions .button {
+  background-color: #0073aa;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 13px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.gmp-admin-actions .button:hover {
+  background-color: #005177;
+  color: #fff;
+}
+
+/* Status Badges */
+.gmp-status-active {
+  background: #d4edda;
+  color: #155724;
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+
+.gmp-status-closed {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+
+/* General Badges */
 .badge-active {
   background: #d1ecf1;
   color: #0c5460;
@@ -157,4 +188,33 @@
   padding: 3px 8px;
   border-radius: 4px;
   font-size: 12px;
+}
+
+/* WordPress Widefat Table Styling */
+table.widefat {
+  border-collapse: collapse;
+  width: 100%;
+  background-color: #fff;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+table.widefat th {
+  background-color: #f7f7f7;
+  padding: 10px;
+  font-weight: 600;
+  border-bottom: 1px solid #ddd;
+}
+
+table.widefat td {
+  padding: 10px;
+  border-bottom: 1px solid #f1f1f1;
+}
+
+table.widefat tr:nth-child(even) {
+  background-color: #fdfdfd;
+}
+
+table.widefat tr:hover {
+  background-color: #f4f9fc;
 }
