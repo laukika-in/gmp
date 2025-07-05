@@ -58,14 +58,14 @@ class GMP_Settings_Page {
             <div class="gmp-setting-row">
                 <label>Lock Period (Months):</label>
                 <div>
-                    <?php echo esc_html( $lock ); ?>
+                    <h2><?php echo esc_html( $lock ); ?><h2>
                     <input type="hidden" name="lock[<?php echo $pid; ?>]" value="<?php echo esc_attr( $lock ); ?>">
                 </div>
             </div>
             <div class="gmp-setting-row">
                 <label>Extension Period (Months):</label>
                 <div>
-                    <?php echo esc_html( $ext ); ?>
+                    <h2><?php echo esc_html( $ext ); ?></h2>
                     <input type="hidden" name="ext[<?php echo $pid; ?>]" value="<?php echo esc_attr( $ext ); ?>">
                 </div>
             </div>
@@ -79,7 +79,7 @@ class GMP_Settings_Page {
                     <?php for ( $i = 1; $i <= intval($ext); $i++ ) :
                         $val = isset( $ei[$i] ) ? esc_attr( $ei[$i] ) : '';
                     ?>
-                        <label class="gmp-ext-item">M<?php echo $i; ?>
+                        <label class="gmp-ext-item">Month <?php echo( $i + $lock); ?>
                             <input type="number" step="0.01" min="0" name="ei[<?php echo $pid; ?>][<?php echo $i; ?>]" value="<?php echo $val; ?>" />
                         </label>
                     <?php endfor; ?>
