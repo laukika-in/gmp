@@ -179,12 +179,19 @@ table.shop_table,
   display: block;
 }
 
+.gmp-card-body p {
+  margin: 0px;
+}
+
 .gmp-card-body {
   padding: 15px;
   font-size: 14px;
   text-align: center;
+  display: flex;
+  align-content: space-around;
+  flex-direction: column;
+  gap: 8px;
 }
-
 .gmp-card-body h4 {
   font-size: 16px;
   margin: 0 0 5px;
