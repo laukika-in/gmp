@@ -15,21 +15,61 @@ if ( ! isset( $_GET['view'] ) ) {
 
 echo '<h3>My EMI Cycles</h3>';
 if ( empty( $cycles ) ) {
-  echo '<div class="gmp-plan-card">';
-    echo '<div class="gmp-card-left">';
-        echo wc_price( $product->get_price() );
+  if ( empty( $cycles ) ) {
+    echo '<p>No EMI cycles found. Choose a plan to get started:</p>';
+
+    $args = [
+        'post_type'      => 'product',
+        'posts_per_page' => -1,
+        'post_status'    => 'publish',
+        'tax_query'      => [
+            [
+                'taxonomy' => 'product_cat',
+                'field'    => 'slug',
+                'terms'    => ['gmp-plan'],
+            ]
+        ],
+        'meta_query'     => [
+            [
+                'key'     => '_visibility',
+                'value'   => ['visible', 'catalog'],
+                'compare' => 'IN',
+            ],
+        ],
+    ];
+
+    $loop = new WP_Query( $args );
+
+    while ( $loop->have_posts() ) {
+        $loop->the_post();
+        $product = wc_get_product( get_the_ID() );
+
+        if ( ! $product ) continue;
+
+        $price = $product->get_price();
+        $permalink = get_permalink( $product->get_id() );
+
+        echo '<div class="gmp-plan-card">';
+        echo '<div class="gmp-card-left">';
+        echo wc_price( $price );
         echo '<small>Per Month</small>';
-    echo '</div>';
-    echo '<div class="gmp-card-right">';
+        echo '</div>';
+
+        echo '<div class="gmp-card-right">';
         echo '<h3>' . esc_html( $product->get_name() ) . '</h3>';
         echo '<p><strong>Plan Type:</strong> Amount</p>';
-        echo '<p><strong>Plan Duration:</strong> ' . esc_html( $product->get_attribute( 'duration' ) ?: '—' ) . '</p>';
-        echo '<p><strong>You Pay Per Month:</strong> ' . wc_price( $product->get_price() ) . '</p>';
-        echo '<p><strong>Total Amount You Pay:</strong> ' . wc_price( $product->get_price() * 10 ) . '</p>';
+        echo '<p><strong>Plan Duration:</strong> 10 Months</p>';
+        echo '<p><strong>You Pay Per Month:</strong> ' . wc_price( $price ) . '</p>';
+        echo '<p><strong>Total Amount You Pay:</strong> ' . wc_price( $price * 10 ) . '</p>';
         echo '<label><input type="checkbox"> Terms & Conditions</label>';
-        echo '<br><a href="' . esc_url( get_permalink( $product->get_id() ) ) . '" class="button gmp-buy-now">Buy Now</a>';
-    echo '</div>';
-echo '</div>';
+        echo '<br><a href="' . esc_url( $permalink ) . '" class="button gmp-buy-now">Buy Now</a>';
+        echo '</div>';
+        echo '</div>';
+    }
+
+    wp_reset_postdata();
+    return;
+}
 
 }
 
