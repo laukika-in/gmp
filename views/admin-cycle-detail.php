@@ -70,13 +70,13 @@ echo '</div></div>';
 echo '</div>';
 echo '<div class="gmp-col"><h3>Plan Status</h3>';
 $status_colors = [
-    'active' => '#ffc107',
+    'active' => '#4caf50',
     'closed' => '#28a745',
     'cancelled' => '#dc3545'
 ];
 $color = $status_colors[ $cycle->status ] ?? '#6c757d';
 
-echo '<p style="padding:4px 8px; color:' . esc_attr($color) . ';border-radius:4px; border:2px solid ' . esc_attr($color) . '; color:#fff;">' . ucfirst( $cycle->status ) . '</p>';
+echo '<p class="status" style="padding:4px 8px; color:' . esc_attr($color) . ';border-radius:4px; border:2px solid ' . esc_attr($color) . ';">' . ucfirst( $cycle->status ) . '</p>';
 echo '</div>';
 echo '</div>'; // gmp-two-col
 

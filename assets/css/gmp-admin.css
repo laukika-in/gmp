@@ -252,6 +252,13 @@
   font-size: 18px;
   font-weight: 600;
 }
+.gmp-col .status {
+  height: 110px;
+  align-content: center;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 600;
+}
 .gmp-btn-close:hover,
 .gmp-btn-cancel:hover,
 .gmp-btn-hold:hover,
