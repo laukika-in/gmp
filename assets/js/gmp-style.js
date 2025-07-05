@@ -1,5 +1,5 @@
 jQuery(document).ready(function($) {
-    // Handle Buy Now
+    // ✅ BUY NOW with Terms check
     $('.gmp-buy-now').on('click', function(e) {
         e.preventDefault();
         const $btn = $(this);
@@ -14,14 +14,10 @@ jQuery(document).ready(function($) {
         window.location.href = $btn.data('url');
     });
 
-    // Handle Terms Link popup
+    // ✅ TERMS LINK - use Fancybox 4 style
     $('.gmp-terms-link').on('click', function(e) {
         e.preventDefault();
-        const termsUrl = $(this).data('url');
-        $.fancybox.open({
-            src: termsUrl,
-            type: 'iframe',
-            iframe: { preload: false }
-        });
+        const url = $(this).data('url');
+        Fancybox.show([{ src: url, type: 'iframe' }]);
     });
 });
