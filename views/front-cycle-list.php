@@ -11,12 +11,12 @@ $cycles_table = $wpdb->prefix . 'gmp_cycles';
 $cycles = $wpdb->get_results( $wpdb->prepare(
     "SELECT * FROM $cycles_table WHERE user_id = %d ORDER BY id DESC", $user_id
 ) );
-if ( ! isset( $_GET['view'] ) ) {
 
-echo '<h3>My EMI Cycles</h3>';
+// =======================
+// 🟡 CASE 1: NO CYCLES YET
+// =======================
 if ( empty( $cycles ) ) {
-  if ( empty( $cycles ) ) {
-    echo '<p>No EMI cycles found. Choose a plan to get started:</p>';
+    echo '<h3>Start Your Gold EMI Plan</h3>';
 
     $args = [
         'post_type'      => 'product',
@@ -29,50 +29,55 @@ if ( empty( $cycles ) ) {
                 'terms'    => ['gmp-plan'],
             ]
         ],
-        'meta_query'     => [
-            [
-                'key'     => '_visibility',
-                'value'   => ['visible', 'catalog'],
-                'compare' => 'IN',
-            ],
-        ],
     ];
 
     $loop = new WP_Query( $args );
 
-    while ( $loop->have_posts() ) {
-        $loop->the_post();
-        $product = wc_get_product( get_the_ID() );
+    if ( $loop->have_posts() ) {
+        echo '<div class="gmp-plans-grid">';
 
-        if ( ! $product ) continue;
+        while ( $loop->have_posts() ) {
+            $loop->the_post();
+            $product = wc_get_product( get_the_ID() );
+            if ( ! $product || ! $product->is_type('variable') ) continue;
 
-        $price = $product->get_price();
-        $permalink = get_permalink( $product->get_id() );
+            $price = $product->get_variation_price( 'min' );
+            $permalink = get_permalink( $product->get_id() );
+            $thumbnail = $product->get_image( 'woocommerce_thumbnail', [ 'style' => 'max-width:100%; height:auto;' ] );
 
-        echo '<div class="gmp-plan-card">';
-        echo '<div class="gmp-card-left">';
-        echo wc_price( $price );
-        echo '<small>Per Month</small>';
+            echo '<div class="gmp-plan-card">';
+            echo '<div class="gmp-card-left" style="background:#ffd700; padding:20px;">';
+            echo $thumbnail;
+            echo '<div style="font-size:26px; font-weight:bold; margin-top:10px;">' . wc_price( $price ) . '</div>';
+            echo '<small>Per Month</small>';
+            echo '</div>';
+
+            echo '<div class="gmp-card-right" style="padding:20px;">';
+            echo '<h3>' . esc_html( $product->get_name() ) . '</h3>';
+            echo '<p><strong>Plan Type:</strong> Amount</p>';
+            echo '<p><strong>Plan Duration:</strong> 10 Months</p>';
+            echo '<p><strong>You Pay Per Month:</strong> ' . wc_price( $price ) . '</p>';
+            echo '<p><strong>Total Amount You Pay:</strong> ' . wc_price( $price * 10 ) . '</p>';
+            echo '<label><input type="checkbox"> Terms & Conditions</label><br>';
+            echo '<a href="' . esc_url( $permalink ) . '" class="button gmp-buy-now" style="margin-top:10px;">Buy Now</a>';
+            echo '</div>';
+            echo '</div>';
+        }
+
         echo '</div>';
-
-        echo '<div class="gmp-card-right">';
-        echo '<h3>' . esc_html( $product->get_name() ) . '</h3>';
-        echo '<p><strong>Plan Type:</strong> Amount</p>';
-        echo '<p><strong>Plan Duration:</strong> 10 Months</p>';
-        echo '<p><strong>You Pay Per Month:</strong> ' . wc_price( $price ) . '</p>';
-        echo '<p><strong>Total Amount You Pay:</strong> ' . wc_price( $price * 10 ) . '</p>';
-        echo '<label><input type="checkbox"> Terms & Conditions</label>';
-        echo '<br><a href="' . esc_url( $permalink ) . '" class="button gmp-buy-now">Buy Now</a>';
-        echo '</div>';
-        echo '</div>';
+        wp_reset_postdata();
+    } else {
+        echo '<p>No GMP Plans found. Please check back later.</p>';
     }
 
-    wp_reset_postdata();
-    return;
+    return; // prevent rest of table from loading
 }
 
-}
+// =======================
+// ✅ CASE 2: HAS EMI CYCLES
+// =======================
 
+echo '<h3>My EMI Cycles</h3>';
 echo '<table class="woocommerce-table gmp-list-table ux-table table table-striped table-hover">';
 echo '<thead><tr>
     <th>Product</th>
@@ -83,25 +88,17 @@ echo '<thead><tr>
     <th>Action</th>
 </tr></thead><tbody>';
 
-
 foreach ( $cycles as $cycle ) {
-$product = wc_get_product( $cycle->variation_id );
-$start   = date_i18n( 'j M Y', strtotime( $cycle->start_date ) );
-$end     = date_i18n( 'j M Y', strtotime( "+".($cycle->total_months - 1)." months", strtotime( $cycle->start_date ) ) );
-$url = add_query_arg( 'view', $cycle->id, wc_get_account_endpoint_url( 'gold-money-plan' ) );
+    $product = wc_get_product( $cycle->variation_id );
+    if ( ! $product ) continue;
 
-$status_badge = match ($cycle->status) {
-    'active' => '<span class="badge-active">Active</span>',
-    'closed' => '<span class="badge-closed">Closed</span>',
-    'hold' => '<span class="badge-hold">On Hold</span>',
-    'cancelled' => '<span class="badge-cancelled">Cancelled</span>',
-    default => '<span>' . ucfirst($cycle->status) . '</span>',
-};
+    $start = date_i18n( 'j M Y', strtotime( $cycle->start_date ) );
+    $end = date_i18n( 'j M Y', strtotime( "+".($cycle->total_months - 1)." months", strtotime( $cycle->start_date ) ) );
+    $url = add_query_arg( 'view', $cycle->id, wc_get_account_endpoint_url( 'gold-money-plan' ) );
 
-
-if ( $product ) {
     $parent = wc_get_product( $product->get_parent_id() );
     $parent_name = $parent ? $parent->get_name() : '';
+    $thumb = $parent ? $parent->get_image( 'woocommerce_thumbnail', [ 'style' => 'width: 40px; height: auto; border-radius: 4px;' ] ) : '';
 
     $attributes = [];
     foreach ( $product->get_variation_attributes() as $key => $val ) {
@@ -110,46 +107,33 @@ if ( $product ) {
         $attributes[] = $term ? $term->name : ucfirst( $val );
     }
     $variation_label = implode( ', ', $attributes );
-    $label = $parent_name . ( $variation_label ? ' - ' . $variation_label : '' );
 
-   $thumb = $parent ? $parent->get_image( 'woocommerce_thumbnail', [ 'style' => 'width: 40px; height: auto; border-radius: 4px;' ] ) : '';
+    $status_badge = match ($cycle->status) {
+        'active' => '<span class="badge-active">Active</span>',
+        'closed' => '<span class="badge-closed">Closed</span>',
+        'hold' => '<span class="badge-hold">On Hold</span>',
+        'cancelled' => '<span class="badge-cancelled">Cancelled</span>',
+        default => '<span>' . ucfirst($cycle->status) . '</span>',
+    };
 
+    $row_class = $cycle->status === 'closed' ? 'gmp-row-closed' : 'gmp-row-active';
 
-    // URL with variation preselected
-    $variation_attrs = $product->get_attributes();
-    $query_args = [];
-    foreach ( $variation_attrs as $attr_name => $attr_value ) {
-        $taxonomy = str_replace( 'attribute_', '', $attr_name );
-        $query_args[ 'attribute_' . sanitize_title( $taxonomy ) ] = $attr_value;
-    }
-    $product_url = add_query_arg( $query_args, get_permalink( $parent->get_id() ) );
+    echo '<tr class="' . esc_attr( $row_class ) . '">';
+    echo '<td data-label="Product">';
+    echo '<div class="gmp-product-flex" style="display:flex; align-items:center; gap:10px;">';
+    echo $thumb;
+    echo '<div style="line-height:1.4;">';
+    echo '<a href="' . esc_url( get_permalink( $parent->get_id() ) ) . '" style="font-weight:bold;">' . esc_html( $parent_name ) . '</a><br>';
+    echo '<small style="color:#666;">' . esc_html( $variation_label ) . '</small>';
+    echo '</div></div></td>';
 
-$row_class = $cycle->status === 'closed' ? 'gmp-row-closed' : 'gmp-row-active';
-echo '<tr class="' . esc_attr( $row_class ) . '">';
-
-echo '<td data-label="Product">';
-echo '<div class="gmp-product-flex" style="display:flex; align-items:center; gap:10px;">';
-echo $thumb;
-echo '<div style="line-height:1.4;">';
-echo '<a href="' . esc_url($product_url) . '" style="font-weight:bold;">' . esc_html( $parent_name ) . '</a><br>';
-echo '<small style="color:#666;">' . esc_html( $variation_label ) . '</small>';
-echo '</div></div></td>';
-
-
-    echo '<td data-label="Start">' . esc_html( $start ) . '</td>';
-    echo '<td data-label="End">' . esc_html( $end ) . '</td>';
-    echo '<td data-label="Status">' . $status_badge . '</td>';
-    echo '<td data-label="Months">' . intval( $cycle->total_months ) . '</td>';
-echo '<td data-label="Action"><a href="' . esc_url( $url ) . '" class="button button-small">View</a></td>';
-
+    echo '<td>' . esc_html( $start ) . '</td>';
+    echo '<td>' . esc_html( $end ) . '</td>';
+    echo '<td>' . $status_badge . '</td>';
+    echo '<td>' . intval( $cycle->total_months ) . '</td>';
+    echo '<td><a href="' . esc_url( $url ) . '" class="button button-small">View</a></td>';
     echo '</tr>';
-} else {
-    echo '<tr><td colspan="6">Invalid product</td></tr>';
 }
 
-}
 echo '</tbody></table>';
-}
-if ( isset( $_GET['view'] ) ) {
-    include GMP_PLUGIN_DIR . 'views/front-cycle-detail.php';
-}
+?>
