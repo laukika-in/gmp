@@ -55,7 +55,9 @@ echo '</div>';
 // Product box
 echo '<div class="gmp-col"><h3>Product Details</h3>';
 echo '<div class="gmp-product-info">';
-echo $thumb;
+$product_link = $parent ? get_permalink( $parent->get_id() ) : '#';
+echo '<a href="' . esc_url( $product_link ) . '" target="_blank">' . $thumb . '</a>';
+
 echo '<div>';
 echo '<p><a href="' . esc_url( $edit_product_link ) . '" target="_blank"><strong>' . esc_html( $parent ? $parent->get_name() : 'N/A' ) . '</strong></a></p>';
 
@@ -67,8 +69,9 @@ if ( $product ) {
         $term = get_term_by( 'slug', $val, $taxonomy );
         $attrs[] = $term ? $term->name : ucfirst( $val );
     }
-    echo '<p><small>' . esc_html( implode( ', ', $attrs ) ) . '</small></p>';
-    echo '<p>' . $price . '</p>';
+  echo '<p><strong>EMI Plan:</strong> ' . esc_html( implode( ', ', $attrs ) ) . '</p>';
+echo '<p><strong>Payable Installment:</strong> ' . $price . '</p>';
+
 }
 echo '</div></div>';
 echo '</div>';
@@ -81,7 +84,8 @@ echo '<br><table class="widefat"><thead><tr>
 </tr></thead><tbody>';
 
 foreach ( $installments as $ins ) {
-    echo '<tr>';
+     $row_class = $ins->is_paid ? 'gmp-paid-row' : 'gmp-pending-row';
+    echo '<tr class="' . esc_attr($row_class) . '">';
     echo '<td>' . $ins->month_number . '</td>';
     echo '<td>' . date_i18n( 'j M Y', strtotime( $ins->due_date ) ) . '</td>';
     echo '<td>' . wc_price( $ins->emi_amount ) . '</td>';
@@ -122,10 +126,10 @@ echo '</div>';
 echo '<div class="gmp-col"><h3>Actions</h3>';
 echo '<div class="gmp-admin-actions">';
 if ( $cycle->status === 'active' ) {
-    echo '<a href="#" class="button gmp-action-btn" data-cycle-id="' . esc_attr($cycle->id) . '" data-action="close">Mark as Closed</a>';
-    echo '<a href="#" class="button gmp-action-btn" data-cycle-id="' . esc_attr($cycle->id) . '" data-action="cancel">Cancel Cycle</a>';
- 
-    echo '<a href="#" class="button gmp-action-btn" data-cycle-id="' . esc_attr($cycle->id) . '" data-action="hold">Hold Future Payments</a>';
+    echo '<a href="#" class="button gmp-action-btn gmp-btn-close" data-cycle-id="' . esc_attr($cycle->id) . '" data-action="close">Mark as Closed</a>';
+echo '<a href="#" class="button gmp-action-btn gmp-btn-cancel" data-cycle-id="' . esc_attr($cycle->id) . '" data-action="cancel">Cancel Cycle</a>';
+echo '<a href="#" class="button gmp-action-btn gmp-btn-hold" data-cycle-id="' . esc_attr($cycle->id) . '" data-action="hold">Hold Future Payments</a>';
+
 } elseif ( $cycle->status === 'hold' ) {
     echo '<a href="#" class="button gmp-action-btn" data-cycle-id="' . esc_attr($cycle->id) . '" data-action="resume">Resume Payments</a>';
 }else {
