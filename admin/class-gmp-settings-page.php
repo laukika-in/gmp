@@ -100,12 +100,16 @@ class GMP_Settings_Page {
  
 
     <script>
-    jQuery(document).ready(function($){
-        $('.gmp-toggle').on('click', function(e){
-            e.preventDefault();
-            $(this).closest('.gmp-card').find('.gmp-card-body').show();
-        });
+   jQuery(document).ready(function($){
+    $('.gmp-card').addClass('open'); // Keep all open initially
+
+    $('.gmp-card-header').on('click', function(){
+        var card = $(this).closest('.gmp-card');
+        card.toggleClass('open');
+        card.find('.gmp-card-body').slideToggle(150);
     });
+});
+
     </script>
     <?php
 }
