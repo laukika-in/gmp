@@ -15,9 +15,42 @@ if ( ! isset( $_GET['view'] ) ) {
 
 echo '<h3>My EMI Cycles</h3>';
 if ( empty( $cycles ) ) {
-    echo '<p>No EMI cycles found.</p>';
+    echo '<h3>Gold Money Plans</h3>';
+    echo '<p>No EMI cycles found. Choose a plan below to get started.</p>';
+
+    $args = [
+        'post_type' => 'product',
+        'posts_per_page' => 12,
+        'product_cat' => 'gmp-plan',
+        'post_status' => 'publish'
+    ];
+    $loop = new WP_Query( $args );
+
+    if ( $loop->have_posts() ) {
+        echo '<div class="gmp-product-grid" style="display:flex; flex-wrap:wrap; gap:20px;">';
+
+        while ( $loop->have_posts() ) {
+            $loop->the_post();
+            $product = wc_get_product( get_the_ID() );
+            if ( ! $product ) continue;
+
+            echo '<div class="gmp-grid-item" style="width:200px; border:1px solid #ddd; padding:10px; border-radius:6px;">';
+            echo '<a href="' . get_permalink() . '">' . $product->get_image( 'woocommerce_thumbnail' ) . '</a>';
+            echo '<h4 style="font-size:16px;">' . $product->get_name() . '</h4>';
+            echo '<p style="margin:4px 0;">' . $product->get_price_html() . '</p>';
+            echo '<a href="' . get_permalink() . '" class="button">View Plans</a>';
+            echo '</div>';
+        }
+
+        echo '</div>';
+        wp_reset_postdata();
+    } else {
+        echo '<p>No GMP plans available right now.</p>';
+    }
+
     return;
 }
+
 
 echo '<table class="woocommerce-table gmp-list-table ux-table table table-striped table-hover">';
 echo '<thead><tr>

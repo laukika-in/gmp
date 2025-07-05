@@ -32,7 +32,7 @@ class GMP_Checkout_Hook {
             ) );
 
             if ( $has_hold ) {
-                wc_add_notice( __( "You cannot purchase a new Gold EMI Plan while one of your plans is on hold. Please resume or close it first.", "gmp" ), 'error' );
+                wc_add_notice( __( "You cannot purchase a new Gold EMI Plan while one of your plans is on hold. Please reach out our support to resume or cancel it.", "gmp" ), 'error' );
 
 // Redirect back to cart to show the message clearly
 if ( is_checkout() ) {
