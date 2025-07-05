@@ -79,7 +79,7 @@ echo '</div>';
 echo '</div>'; // gmp-two-col
 
 // === Installments Table ===
-echo '<br><table class="widefat"><thead><tr>
+echo '<br><table class="widefat gmp-table"><thead><tr>
     <th style="width:50px;">#</th><th>Due</th><th>EMI</th><th>Interest</th><th>Total</th><th>Status</th><th>Paid On</th><th>Order</th>
 </tr></thead><tbody>';
 
@@ -87,11 +87,13 @@ foreach ( $installments as $ins ) {
      $row_class = $ins->is_paid ? 'gmp-paid-row' : 'gmp-pending-row';
     echo '<tr class="' . esc_attr($row_class) . '">';
     echo '<td>' . $ins->month_number . '</td>';
-    echo '<td>' . date_i18n( 'j M Y', strtotime( $ins->due_date ) ) . '</td>';
+   
     echo '<td>' . wc_price( $ins->emi_amount ) . '</td>';
     echo '<td>' . $ins->interest_rate . '%</td>';
-    echo '<td>' . wc_price( $ins->total_with_interest ) . '</td>';
-    echo '<td>' . ( $ins->is_paid ? 'Paid' : 'Pending' ) . '</td>';
+  
+    echo '<td class="' . ( $ins->is_paid ? 'paid' : 'pending' ) . '"><p>' . ( $ins->is_paid ? 'Paid' : 'Pending' ) . '</p></td>';
+      echo '<td>' . wc_price( $ins->total_with_interest ) . '</td>';
+       echo '<td>' . date_i18n( 'j M Y', strtotime( $ins->due_date ) ) . '</td>';
     echo '<td>' . ( $ins->paid_date ? date_i18n( 'j M Y', strtotime( $ins->paid_date ) ) : '—' ) . '</td>';
     echo '<td>' . ( $ins->order_id ? '<a href="' . esc_url( get_edit_post_link( $ins->order_id ) ) . '">#' . $ins->order_id . '</a>' : '-' ) . '</td>';
     echo '</tr>';
