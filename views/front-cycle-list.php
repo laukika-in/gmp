@@ -48,10 +48,15 @@ if ( empty( $cycles ) ) {
         $product_url = get_permalink( $product->get_id() );
 
         echo '<div class="gmp-plan-card">';
-        echo '<div class="gmp-card-left">';
-        echo '<span class="gmp-price-big">' . wc_price($min_price) . '</span><br>';
-        echo '<small>Per Month</small>';
-        echo '</div>';
+       $thumb = $product->get_image( 'woocommerce_thumbnail', [
+    'style' => 'max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);',
+    'alt'   => $product->get_name()
+] );
+
+echo '<div class="gmp-card-left">';
+echo $thumb;
+echo '</div>';
+
         echo '<div class="gmp-card-right">';
         echo '<h3>' . esc_html( $product->get_name() ) . '</h3>';
         echo '<p><strong>Plan Type:</strong> Amount</p>';
@@ -67,7 +72,7 @@ if ( empty( $cycles ) ) {
 // =======================
 // ✅ CASE 2: HAS EMI CYCLES
 // =======================
-
+if ( !empty( $cycles ) ) {
 echo '<h3>My EMI Cycles</h3>';
 echo '<table class="woocommerce-table gmp-list-table ux-table table table-striped table-hover">';
 echo '<thead><tr>
@@ -127,4 +132,5 @@ foreach ( $cycles as $cycle ) {
 }
 
 echo '</tbody></table>';
+}
 ?>

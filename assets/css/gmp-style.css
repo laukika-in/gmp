@@ -175,16 +175,13 @@ table.shop_table {
 
 .gmp-card-left {
   background: #ffd700;
-  padding: 30px 20px;
+  padding: 20px;
   width: 160px;
   text-align: center;
-  font-size: 18px;
-  font-weight: bold;
   display: flex;
-  flex-direction: column;
+  align-items: center;
   justify-content: center;
 }
-
 .gmp-price-big {
   font-size: 32px;
 }
