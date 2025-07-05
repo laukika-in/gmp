@@ -205,6 +205,15 @@
   background: #007bff !important;
   color: #fff !important;
 }
+.gmp-warning-note {
+  background: #fff3cd;
+  color: #856404;
+  padding: 8px 12px;
+  border-radius: 5px;
+  border: 1px solid #ffeeba;
+  margin-top: 10px;
+}
+
 .gmp-table th {
   font-size: 18px;
   font-weight: 600;

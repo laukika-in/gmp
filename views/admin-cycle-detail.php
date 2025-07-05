@@ -136,9 +136,25 @@ echo '<a href="#" class="button gmp-action-btn gmp-btn-hold" data-cycle-id="' . 
 
 } elseif ( $cycle->status === 'hold' ) {
     echo '<a href="#" class="button gmp-action-btn gmp-btn-resume " data-cycle-id="' . esc_attr($cycle->id) . '" data-action="resume">Resume Payments</a>';
-}else {
-    echo '<p><em>This cycle is not active. Actions unavailable.</em></p>';
+} else {
+    // Check if any EMI is unpaid
+    $has_pending = false;
+    foreach ( $installments as $ins ) {
+        if ( ! $ins->is_paid ) {
+            $has_pending = true;
+            break;
+        }
+    }
+
+    if ( $has_pending ) {
+        // Show Resume Action (if mistakenly closed with pending EMIs)
+        echo '<a href="#" class="button gmp-action-btn" data-cycle-id="' . esc_attr($cycle->id) . '" data-action="resume">Reopen Cycle</a>';
+        echo '<div class="gmp-warning-note">Note: Some EMIs are unpaid. You can reopen the cycle.</div>';
+    } else {
+        echo '<p><em>This cycle is not active. All EMIs cleared.</em></p>';
+    }
 }
+
 
 echo '</div></div>';
 
