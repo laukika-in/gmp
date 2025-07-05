@@ -51,42 +51,50 @@ class GMP_Settings_Page {
                         </tr>
                     </thead>
                     <tbody>
-                    <?php foreach ( $products as $product ) :
-                        $pid = $product->get_id();
-                        $lock = get_post_meta( $pid, '_gmp_lock_months', true );
-                        $ext  = get_post_meta( $pid, '_gmp_extension_months', true );
-                        $base = get_post_meta( $pid, '_gmp_base_interest', true );
-                        $ei   = get_post_meta( $pid, '_gmp_extension_interest', true );
-                        $ei   = is_array( $ei ) ? $ei : maybe_unserialize( $ei );
-                        ?>
-                        <tr>
-                            <td><strong><?php echo esc_html( $product->get_name() ); ?></strong></td>
-                            <td>
-                               
+                <div class="gmp-settings-wrap">
+    <?php foreach ( $products as $product ) :
+        $pid = $product->get_id();
+        $lock = get_post_meta( $pid, '_gmp_lock_months', true );
+        $ext  = get_post_meta( $pid, '_gmp_extension_months', true );
+        $base = get_post_meta( $pid, '_gmp_base_interest', true );
+        $ei   = get_post_meta( $pid, '_gmp_extension_interest', true );
+        $ei   = is_array( $ei ) ? $ei : maybe_unserialize( $ei );
+    ?>
+    <div class="gmp-product-section">
+        <div class="gmp-product-header"><?php echo esc_html( $product->get_name() ); ?></div>
+        <div class="gmp-interest-grid">
+            <div>
+                <label>Lock Period (months)</label>
+                <?php echo esc_html( $lock ); ?>
+                <input type="hidden" name="lock[<?php echo $pid; ?>]" value="<?php echo esc_attr( $lock ); ?>" />
+            </div>
+            <div>
+                <label>Extension Period (months)</label>
+                <?php echo esc_html( $ext ); ?>
+                <input type="hidden" name="ext[<?php echo $pid; ?>]" value="<?php echo esc_attr( $ext ); ?>" />
+            </div>
+            <div>
+                <label>Base Interest (%)</label>
+                <input type="number" step="0.01" min="0" name="base[<?php echo $pid; ?>]" value="<?php echo esc_attr( $base ); ?>" />
+            </div>
+            <div>
+                <label>Extension Interest per Month (%)</label>
+                <div class="gmp-extension-inputs">
+                    <?php
+                    $ext_count = intval( $ext );
+                    for ( $i = 1; $i <= $ext_count; $i++ ) {
+                        $val = isset( $ei[$i] ) ? esc_attr( $ei[$i] ) : '';
+                        echo "<label>M{$i}<input type='number' step='0.01' min='0' name='ei[{$pid}][{$i}]' value='{$val}' /></label> ";
+                    }
+                    ?>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endforeach; ?>
+</div>
 
-                                  <?php echo esc_html( $lock ); ?>
-    <input type="hidden" name="lock[<?php echo $pid; ?>]" value="<?php echo esc_attr( $lock ); ?>" />
-                            </td>
-                            <td>
-                                <?php echo esc_html( $ext ); ?>
-    <input type="hidden" name="ext[<?php echo $pid; ?>]" value="<?php echo esc_attr( $ext ); ?>" />
-
-                            </td>
-                            <td>
-                                <input type="number" step="0.01" name="base[<?php echo $pid; ?>]" value="<?php echo esc_attr( $base ); ?>" min="0" />
-                            </td>
-                            <td>
-                                <?php
-                                $ext_count = intval( $ext );
-                                for ( $i = 1; $i <= $ext_count; $i++ ) {
-                                    $val = isset( $ei[$i] ) ? esc_attr( $ei[$i] ) : '';
-                                    echo "<label style='display:inline-block; width:75px;'>M{$i}<input type='number' step='0.01' min='0' name='ei[{$pid}][{$i}]' value='{$val}' style='width:60px; margin-left:5px;' /></label> ";
-                                }
-                                ?>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </tbody>
+                </tbody>
                 </table>
 
                 <p><input type="submit" class="button button-primary" value="Save Settings" /></p>

@@ -192,9 +192,8 @@
   color: #fff !important;
 }
 .gmp-btn-hold {
-  background: #ffc107 !important;
-  color: #fff !important;
-  color: #000;
+  background: #ba7009 !important;
+  color: #fff !important; 
 }
 .gmp-btn-resume {
   background: #007bff !important;
@@ -214,4 +213,43 @@
 .gmp-pending-row {
   background-color: #f5f5f5;
   color: #999;
+}
+.gmp-settings-wrap .gmp-product-section {
+    border: 1px solid #ccd0d4;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #fafafa;
+}
+.gmp-settings-wrap .gmp-product-header {
+    font-weight: bold;
+    font-size: 15px;
+    margin-bottom: 10px;
+}
+.gmp-settings-wrap .gmp-interest-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 2fr;
+    gap: 20px;
+    align-items: start;
+}
+.gmp-settings-wrap .gmp-interest-grid label {
+    font-size: 13px;
+    font-weight: 500;
+    display: block;
+    margin-bottom: 5px;
+}
+.gmp-settings-wrap input[type="number"] {
+    width: 100%;
+    max-width: 100px;
+}
+.gmp-settings-wrap .gmp-extension-inputs label {
+    display: inline-block;
+    margin-right: 10px;
+    font-size: 13px;
+}
+.gmp-settings-wrap .gmp-extension-inputs input {
+    width: 50px;
+}
+.gmp-settings-wrap .button-primary {
+    margin-top: 20px;
 }

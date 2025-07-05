@@ -131,7 +131,7 @@ echo '<a href="#" class="button gmp-action-btn gmp-btn-cancel" data-cycle-id="' 
 echo '<a href="#" class="button gmp-action-btn gmp-btn-hold" data-cycle-id="' . esc_attr($cycle->id) . '" data-action="hold">Hold Future Payments</a>';
 
 } elseif ( $cycle->status === 'hold' ) {
-    echo '<a href="#" class="button gmp-action-btn" data-cycle-id="' . esc_attr($cycle->id) . '" data-action="resume">Resume Payments</a>';
+    echo '<a href="#" class="button gmp-action-btn gmp-btn-resume " data-cycle-id="' . esc_attr($cycle->id) . '" data-action="resume">Resume Payments</a>';
 }else {
     echo '<p><em>This cycle is not active. Actions unavailable.</em></p>';
 }
