@@ -148,8 +148,8 @@ echo '<a href="#" class="button gmp-action-btn gmp-btn-hold" data-cycle-id="' . 
 
     if ( $has_pending ) {
         // Show Resume Action (if mistakenly closed with pending EMIs)
-        echo '<a href="#" style=" display: flex; flex-direction: column;height: 80px;" class="button gmp-action-btn" data-cycle-id="' . esc_attr($cycle->id) . '" data-action="resume">Reopen Cycle</a>';
-        echo '<div class="gmp-warning-note">Note: Some EMIs are unpaid. You can reopen the cycle.</div>';
+        echo '<div style=" display: flex; flex-direction: column;"><a href="#" style="height: 80px;border: 1px solid #2271b1;" class="button gmp-action-btn" data-cycle-id="' . esc_attr($cycle->id) . '" data-action="resume">Reopen Cycle</a>';
+        echo '<div class="gmp-warning-note">Note: Some EMIs are unpaid. You can reopen the cycle.</div></div>';
     } else {
         echo '<p><em>This cycle is not active. All EMIs cleared.</em></p>';
     }
