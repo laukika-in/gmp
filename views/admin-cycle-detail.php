@@ -29,14 +29,7 @@ $edit_user_link = $user ? admin_url( 'user-edit.php?user_id=' . $user->ID ) : '#
 echo '<div class="wrap gmp-admin-wrap">';
 echo '<a href="' . admin_url( 'admin.php?page=gmp-cycles' ) . '" class="button">&larr; Back to List</a>';
 echo '<h2>Cycle #' . esc_html( $cycle->id ) . ' Details</h2>';
-$status_colors = [
-    'active' => '#ffc107',
-    'closed' => '#28a745',
-    'cancelled' => '#dc3545'
-];
-$color = $status_colors[ $cycle->status ] ?? '#6c757d';
 
-echo '<p><strong>Status:</strong> <span style="padding:4px 8px; border-radius:4px; background:' . esc_attr($color) . '; color:#fff;">' . ucfirst( $cycle->status ) . '</span></p>';
 
 // === Two Column Metaboxes ===
 echo '<div class="gmp-two-col">';
@@ -75,14 +68,15 @@ echo '<p><strong>Payable Installment:</strong> ' . $price . '</p>';
 }
 echo '</div></div>';
 echo '</div>';
-echo '<div class="gmp-col"><h3>User Details</h3>';
-if ( $user ) {
-    echo '<p><strong>Name:</strong> <a href="' . esc_url( $edit_user_link ) . '" target="_blank">' . esc_html( $user->display_name ) . '</a></p>';
-    echo '<p><strong>Email:</strong> <a href="mailto:' . esc_attr( $user->user_email ) . '">' . esc_html( $user->user_email ) . '</a></p>';
-    echo '<p><strong>User ID:</strong> ' . esc_html( $user->ID ) . '</p>';
-} else {
-    echo '<p>User not found</p>';
-}
+echo '<div class="gmp-col"><h3>Plan Status</h3>';
+$status_colors = [
+    'active' => '#ffc107',
+    'closed' => '#28a745',
+    'cancelled' => '#dc3545'
+];
+$color = $status_colors[ $cycle->status ] ?? '#6c757d';
+
+echo '<p style="padding:4px 8px; border-radius:4px; background:' . esc_attr($color) . '; color:#fff;">' . ucfirst( $cycle->status ) . '</p>';
 echo '</div>';
 echo '</div>'; // gmp-two-col
 
