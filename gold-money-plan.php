@@ -1,12 +1,13 @@
 <?php
 /**
  * Plugin Name: Gold Money Plan
- * Description: Custom EMI-based gold investment plugin for WooCommerce.
- * Version: 2.0.54
- * Author: Your Name
+ * Description: Custom EMI-based gold investment plugin for Talla Jewellers.
+ * Plugin URI: https://laukika.com/
+ * Author: Laukika
+ * Version: 1.0.0
+ * Author URI: https://laukika.com/
  * Text Domain: gmp
  */
-
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly.
