@@ -221,7 +221,7 @@
 }
 .gmp-card {
   border: 1px solid #ddd;
-  background: #fdfdfd;
+  background: #fffce4;
   border-radius: 6px;
   padding: 15px;
 }
@@ -229,14 +229,13 @@
   display: flex;
   justify-content: space-between;
   font-size: 16px;
-  margin-bottom: 10px;
   font-weight: 600;
   cursor: pointer;
   padding: 10px 0;
   border-bottom: 1px solid #ddd;
 }
 .gmp-card-header .gmp-toggle {
-  font-size: 13px;
+  font-size: 16px;
   text-decoration: none;
   color: #0073aa;
 }
